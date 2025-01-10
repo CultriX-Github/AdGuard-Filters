@@ -77,6 +77,8 @@
 ||bugsnag.com^$important
 /(^|[_.-]*)?(survey(link)?|stats?)[._-]/$important
 /(^|[_.-]*)?sitescout[._-]/$important
+
+! == (WARNING: TLDs) - Blocks entire countries ==
 /^([a-z0-9-]+\.)*(pk|in|ye|ir|af|id|cn|kr|ps|qa|ug|mz|zw|ng|mx|do|cd)$/$important
 
 ! =============================================================================
@@ -97,7 +99,7 @@
 @@/^nvidia|geforce[._-](com|nl)/$important
 @@/^oculus(vr)?[._-](com|nl)/$important
 
-! == (WARNING: NSFW) Adult Entertainment Whitelist == 
+! == (WARNING: NSFW) - Whitelists Adult Entertainment Whitelist == 
 @@/^(.+[_.-])?(pornhub|xnxx|xvideos|xhamster|youporn)[._-](com|nl|io|tw|se|do)/$important
 
 ! =============================================================================
