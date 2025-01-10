@@ -1,0 +1,67 @@
+! =============================================================================
+! 1. WHITELISTED DOMAINS – REGEX
+! Allows important and widely trusted domains (including adult entertainment)
+! =============================================================================
+@@/^(.+[_.-])?(spotify|reddit(media)?|sci-hub|mega|soundcloud)[._-](com|nl|io|tw|se|do)/$important
+@@/^clients[0-9]*\.google[._-]*/$important
+@@/^github(usercontent)?[._-]*/
+
+! === OPTINAL WHITELISTS ===
+! == Utility Whitelist ==
+@@/^ipv(4|6)+\.icanhazip[._-]com/$important
+@@||ipinfo.io$important
+
+! == Gaming Whitelist ==
+@@/^steamcdn-a\.akamaihd[._-]*/
+@@/^nvidia|geforce[._-](com|nl)/$important
+@@/^oculus(vr)?[._-](com|nl)/$important
+
+! == (WARNING: NSFW) - Whitelists Adult Entertainment Whitelist == 
+@@/^(.+[_.-])?(pornhub|xnxx|xvideos|xhamster|youporn)[._-](com|nl|io|tw|se|do)/$important
+
+! =============================================================================
+! 2. WHITELISTED DOMAINS – WILDCARDS
+! Allows important and widely trusted domains
+! =============================================================================
+@@||torproject.org^$important
+@@||api.telegram.org^$important
+@@||github.com^$important
+@@||youtube.com^$important
+@@||paypal.com^$important
+@@||cloudflare.com^$important
+@@||ubuntu.com^$important
+@@||stackoverflow.com^$important
+@@||archlinux.org^$important
+@@||pool.ntp.org^$important
+
+! =============================================================================
+! 3. WHITELISTED DOMAINS – SINGLE DOMAINS
+! Allows important and widely trusted domains
+! =============================================================================
+! == AdLists ==
+@@dbl.oisd.nl^$important
+@@adaway.org^$important
+
+! == Time Services ==
+@@time.windows.com^$important
+@@time.cloudflare.com^$important
+
+! =============================================================================
+! 4. WHITELISTED TORRENT TRACKERS
+! Allows common torrent trackers for file sharing
+! =============================================================================
+@@||tracker.openbittorrent.com^$important
+@@||tracker.leechers-paradise.org^$important
+@@||tracker.coppersurfer.tk^$important
+@@||tracker.opentrackr.org^$important
+@@||explodie.org^$important
+@@||tracker.internetwarriors.net^$important
+@@||ipv4.tracker.harry.lu^$important
+@@||tracker2.itzmx.com^$important
+@@||tracker.dler.org^$important
+@@||tracker.gbitt.info^$important
+@@||tracker.nanoha.org^$important
+@@||tracker.bt4g.com^$important
+@@||tracker.torrent.eu.org^$important
+@@||tracker.fastdownload.xyz^$important
+@@||iptorrents.com^$important
