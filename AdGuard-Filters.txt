@@ -1,0 +1,159 @@
+! =============================================================================
+! 1. GENERAL ADVERTISEMENT BLOCKING
+! Blocks common ad-serving domains and subdomains
+! =============================================================================
+||aaxads.com^$important
+||doubleclick.net^$important
+||adservice.google.com^$important
+||adnxs.com^$important
+||googlesyndication.com^$important
+||ads.yahoo.com^$important
+
+! == Comprehensive regex to block common ad-serving keywords ==
+/([^a-z0-9]|^)(ads?|banners?|doubleclick|flashtalking|scorecardresearch|yieldmanager|googlesyndication|adchoice|adimage|pixel|advert(is(e|ing)|isements?)?|impression)[._-]/$important
+
+! == Specific subdomain-level patterns for finer control ==
+/(^|[_.-]*)?adchoice\./$important
+/(^|[_.-]*)?adim(age|g)s?[0-9]*[_.-]/$important
+/(^|[_.-]*)?adnxs(\.\w{2,4})/$important
+
+! =============================================================================
+! 2. PLATFORM-SPECIFIC ADVERTISEMENT BLOCKING
+! Blocks ads and tracking on specific platforms
+! =============================================================================
+/(^|[_.-]*)?(ads?|captive|logs|cloudservices)\.roku\.com/$important
+/(^|[_.-]*)?clicks\.beap\.bc\.yahoo\.com/$important
+/(^|[_.-]*)?google[._-]?syndicat(e|ion)+[._-]/$important
+/(^|[_.-]*)?secure\.footprint\.net/$important
+
+! =============================================================================
+! 3. TRACKING AND ANALYTICS BLOCKING
+! Blocks tracking, analytics, telemetry, and pixels
+! =============================================================================
+/([^a-z0-9]|^)(tracking|track(er|ing)?|telemetry|metric(s)?|beacons?|analytics?|pixels?|crashlytics|behavior|data-collect)[._-]/$important
+/(^|[_.-]*)?tracking\./$important
+/(^|[_.-]*)?beacons?[_.-]/$important
+/(^|[_.-]*)?crashlytics[_.-]/$important
+
+! =============================================================================
+! 4. CRYPTOCURRENCY MINING AND RELATED ABUSE
+! Blocks known crypto-mining domains
+! =============================================================================
+||coinhive.com^$important
+||crypto-loot.com^$important
+||webminepool.com^$important
+||minero.cc^$important
+
+! =============================================================================
+! 5. SCAM AND FRAUDULENT DOMAIN BLOCKING
+! Blocks scams like Discord Nitro, crypto airdrops, and phishing domains
+! =============================================================================
+! == Discord Nitro scams ==
+/(^|[_.-]*)?d[il]sc(or|ro)ds?-?(g[il]ft|n[il]tro|gifts?-?discord)[.-].*/$important
+
+! == Crypto + scam combinations ==
+/([^a-z0-9]|^)(crypto|bitcoin|ether|nft|scam|phish)[._-](gift|promo|airdrop)\..*/$important
+/([A-Za-z0-9.-]*\.)?gifts?-?discord\..*/$important
+
+! == Known scam domains ==
+||malwaredomainlist.com^$important
+||phishingdatabase.com^$important
+||scam-site-checker.com^$important
+
+! =============================================================================
+! 6. MALWARE AND PHISHING BLOCKING
+! Blocks known malicious and phishing domains
+! =============================================================================
+||malicious.com^$important
+||fraudulent.com^$important
+||fakeupdate.net^$important
+/([^a-z0-9]|^)(malware|spyware|ransomware|virus|trojan|worm)[._-]/$important
+
+! =============================================================================
+! 7. SPECIFIC SERVICES AND TLD BLOCKING
+! Blocks unwanted services, subdomains, and ccTLD patterns
+! =============================================================================
+||buffpanel.com^$important
+||bugsnag.com^$important
+/(^|[_.-]*)?(survey(link)?|stats?)[._-]/$important
+/(^|[_.-]*)?sitescout[._-]/$important
+/^([a-z0-9-]+\.)*(pk|in|ye|ir|af|id|cn|kr|ps|qa|ug|mz|zw|ng|mx|do|cd)$/$important
+
+! =============================================================================
+! 8. WHITELISTED DOMAINS – REGEX
+! Allows important and widely trusted domains (including adult entertainment)
+! =============================================================================
+@@/^(.+[_.-])?(spotify|reddit(media)?|sci-hub|mega|soundcloud)[._-](com|nl|io|tw|se|do)/$important
+@@/^clients[0-9]*\.google[._-]*/$important
+@@/^github(usercontent)?[._-]*/
+
+! === OPTINAL WHITELISTS ===
+! == Utility Whitelist ==
+@@/^ipv(4|6)+\.icanhazip[._-]com/$important
+@@||ipinfo.io$important
+
+! == Gaming Whitelist ==
+@@/^steamcdn-a\.akamaihd[._-]*/
+@@/^nvidia|geforce[._-](com|nl)/$important
+@@/^oculus(vr)?[._-](com|nl)/$important
+
+! == (WARNING: NSFW) Adult Entertainment Whitelist == 
+@@/^(.+[_.-])?(pornhub|xnxx|xvideos|xhamster|youporn)[._-](com|nl|io|tw|se|do)/$important
+
+! =============================================================================
+! 9. WHITELISTED DOMAINS – WILDCARDS
+! Allows important and widely trusted domains
+! =============================================================================
+@@||torproject.org^$important
+@@||api.telegram.org^$important
+@@||github.com^$important
+@@||youtube.com^$important
+@@||paypal.com^$important
+@@||cloudflare.com^$important
+@@||ubuntu.com^$important
+@@||stackoverflow.com^$important
+@@||archlinux.org^$important
+@@||pool.ntp.org^$important
+
+! =============================================================================
+! 10. WHITELISTED DOMAINS – SINGLE DOMAINS
+! Allows important and widely trusted domains
+! =============================================================================
+! == AdLists ==
+@@dbl.oisd.nl^$important
+@@adaway.org^$important
+
+! == Time Services ==
+@@time.windows.com^$important
+@@time.cloudflare.com^$important
+
+! =============================================================================
+! 10. WHITELISTED TORRENT TRACKERS
+! Allows common torrent trackers for file sharing
+! =============================================================================
+@@||tracker.openbittorrent.com^$important
+@@||tracker.leechers-paradise.org^$important
+@@||tracker.coppersurfer.tk^$important
+@@||tracker.opentrackr.org^$important
+@@||explodie.org^$important
+@@||tracker.internetwarriors.net^$important
+@@||ipv4.tracker.harry.lu^$important
+@@||tracker2.itzmx.com^$important
+@@||tracker.dler.org^$important
+@@||tracker.gbitt.info^$important
+@@||tracker.nanoha.org^$important
+@@||tracker.bt4g.com^$important
+@@||tracker.torrent.eu.org^$important
+@@||tracker.fastdownload.xyz^$important
+@@||iptorrents.com^$important
+
+! =============================================================================
+! 11. INDUSTRY BEST PRACTICES (COMMENTS)
+! =============================================================================
+! 1) Regularly update filters from trusted sources (EasyList, EasyPrivacy, etc.).
+! 2) Use anchored regex to avoid partial matches (e.g., blocking "adventure").
+! 3) Whitelist sparingly, only for essential or trusted domains.
+! 4) Monitor logs for false positives and refine patterns as needed.
+! 5) Segment filters into aggressive and moderate lists, if applicable.
+! 6) Use "$important" judiciously to override other rules.
+! 7) Reassess TLD and domain blocks periodically for legitimate sites.
