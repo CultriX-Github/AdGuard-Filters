@@ -1,5 +1,5 @@
 ! =============================================================================
-! 1. GENERAL ADVERTISEMENT BLOCKING
+! 🛑 1. GENERAL ADVERTISEMENT BLOCKING
 ! Blocks common ad-serving domains and subdomains
 ! =============================================================================
 ||aaxads.com^$important
@@ -10,50 +10,75 @@
 ||ads.yahoo.com^$important
 
 ! == Comprehensive regex to block common ad-serving keywords ==
-/([^a-z0-9]|^)(ads?|banners?|doubleclick|flashtalking|scorecardresearch|yieldmanager|googlesyndication|adchoice|adimage|pixel|advert(is(e|ing)|isements?)?|impression)[._-]/$important
+/(?:^|[_.-])(?:ads?|banners?|doubleclick|flashtalking|scorecardresearch|yieldmanager|googlesyndication|ad(?:choice|image)|pixel|advert(?:is(?:e|ing)|isements?)?|impression)[._-]/$important
 
 ! == Specific subdomain-level patterns for finer control ==
-/(^|[_.-]*)?adchoice\./$important
-/(^|[_.-]*)?adim(age|g)s?[0-9]*[_.-]/$important
-/(^|[_.-]*)?adnxs(\.\w{2,4})/$important
+/(?:^|[_.-])ad(?:choice|image|nxs|serv(?:er|ice)?|sdk|track(?:er|ing)?)\./$important
+/(?:^|[_.-])ads(?:yahoo|dk)?\./$important
+/(?:^|[_.-])ad(?:sxv?[0-9]*|system|banner|track|serv|choice)\./$important
+/(?:^|[_.-])adim(?:g|age)+s?(?:-[a-z0-9\-]*)?\.[a-z0-9\-]*\./$important
+/(?:^|[_.-])adsdk\./$important
+/(?:^|[_.-])adserv\./$important
+/(?:^|[_.-])adse?rv(?:er|ice)?s?[0-9]*[_.-]/$important
+/(?:^|[_.-])adtrack(?:er|ing)?[0-9]*[_.-]/$important
+/(?:^|[_.-])advert(?:s|is(?:ing|ements?)?)?[0-9]*[_.-]/$important
+/(?:^|[_.-])aff(?:iliat(?:es|ion))?[._-]/$important
+
+! == Advanced Regex: Blocks URLs with common ad-related file extensions in path ==
+/\.(?:ad|banner|popup|advert|swf|flv|img|iframe)\W*$/$important,domain=~first-party.com
+
+! == Advanced Regex: Blocks URLs containing common ad-related path segments ==
+/(?:/|_)(?:ads?|banners?|advert(?:ising|isements?)?|promos?|click(?:s|through)?|redirect|popup(?:s)?)(?:/|_|$)/$important,domain=~first-party.com
 
 ! =============================================================================
-! 2. PLATFORM-SPECIFIC ADVERTISEMENT BLOCKING
+! 📺 2. PLATFORM-SPECIFIC AD BLOCKING
 ! Blocks ads and tracking on specific platforms
 ! =============================================================================
-/(^|[_.-]*)?(ads?|captive|logs|cloudservices)\.roku\.com/$important
-/(^|[_.-]*)?clicks\.beap\.bc\.yahoo\.com/$important
-/(^|[_.-]*)?google[._-]?syndicat(e|ion)+[._-]/$important
-/(^|[_.-]*)?secure\.footprint\.net/$important
+/(?:^|[_.-])(?:ads?|captive|logs|cloudservices)\.roku\.com/$important
+/(?:^|[_.-])clicks\.beap\.bc\.yahoo\.com/$important
+/(?:^|[_.-])google[_.-]?syndicat(?:e|ion)+[_.-]/$important
+/(?:^|[_.-])secure\.footprint\.net/$important
 
 ! =============================================================================
-! 3. TRACKING AND ANALYTICS BLOCKING
-! Blocks tracking, analytics, telemetry, and pixels
+! 🔍 3. TRACKING & ANALYTICS BLOCKING
+! Blocks tracking, analytics, telemetry, and pixels - Enhanced patterns
 ! =============================================================================
-/([^a-z0-9]|^)(tracking|track(er|ing)?|telemetry|metric(s)?|beacons?|analytics?|pixels?|crashlytics|behavior|data-collect)[._-]/$important
-/(^|[_.-]*)?tracking\./$important
-/(^|[_.-]*)?beacons?[_.-]/$important
-/(^|[_.-]*)?crashlytics[_.-]/$important
+/(?:^|[_.-])(?:tracking|track(?:er|ing)?|telemetry|metrics?|beacons?|analytics?|pixels?|crashlytics|behavior|data-collect)[._-]/$important
+/(?:^|[_.-])tracking\./$important
+/(?:^|[_.-])beacons?[._-]/$important
+/(?:^|[_.-])crashlytics[_.-]/$important
+/(?:^|[_.-])analytics?[._-]/$important
+/(?:^|[_.-])metric\./$important
+/(?:^|[_.-])stat(?:s|istics)?(?:-[a-z0-9\-]*)?\.[a-z0-9\-]*\./$important
+/(?:^|[_.-])telemetry(?:-[a-z0-9\-]*)?\.[a-z0-9\-]*\./$important
+
+! == Advanced Regex: Blocks URLs with common tracking URL parameters ==
+/\?(?:utm_|ref_|source|origin|trk|cid|pid|aid|gclid|fbclid|mc_|mb_|msclkid|oly_anon_id|oly_enc_id|vero_|ga_|awc|yclid|ef_id|s_kwcid|mscklid|ttclid|twclid|li_fat_id|li_o_id|wickedid)\w*=/$important,domain=~first-party.com
+
+! == Advanced Regex: Blocks URLs containing generic tracking keywords in path segments ==
+/(?:/|_)(?:track|pixel|collect|monitor|analytic|telemetry|beacon|stat|metric)(?:s)?(?:/|_|$)/$important,domain=~first-party.com
 
 ! =============================================================================
-! 4. CRYPTOCURRENCY MINING AND RELATED ABUSE
-! Blocks known crypto-mining domains
+! ⛏️ 4. CRYPTOCURRENCY MINING & RESOURCE ABUSE
+! Blocks known crypto-mining domains and resource drainers
 ! =============================================================================
 ||coinhive.com^$important
 ||crypto-loot.com^$important
 ||webminepool.com^$important
 ||minero.cc^$important
+||hashvault.pro^$important
+||redshell.io^$important
 
 ! =============================================================================
-! 5. SCAM AND FRAUDULENT DOMAIN BLOCKING
-! Blocks scams like Discord Nitro, crypto airdrops, and phishing domains
+! ⚠️ 5. SCAM & FRAUD BLOCKING
+! Blocks Discord Nitro scams, crypto scams, phishing domains
 ! =============================================================================
 ! == Discord Nitro scams ==
-/(^|[_.-]*)?d[il]sc(or|ro)ds?-?(g[il]ft|n[il]tro|gifts?-?discord)[.-].*/$important
+/(?:^|[_.-])d[il]sc(?:or|ro)ds?-?(?:g[il]ft|n[il]tro|gifts?-?discord)[.-].*/$important
 
 ! == Crypto + scam combinations ==
-/([^a-z0-9]|^)(crypto|bitcoin|ether|nft|scam|phish)[._-](gift|promo|airdrop)\..*/$important
-/([A-Za-z0-9.-]*\.)?gifts?-?discord\..*/$important
+/(?:^|[_.-])(?:crypto|bitcoin|ether|nft|scam|phish)[_-](?:gift|promo|airdrop)\..*/$important
+/(?:[A-Za-z0-9.-]*\.)?gifts?-?discord\..*/$important
 
 ! == Known scam domains ==
 ||malwaredomainlist.com^$important
@@ -61,50 +86,47 @@
 ||scam-site-checker.com^$important
 
 ! =============================================================================
-! 6. MALWARE AND PHISHING BLOCKING
-! Blocks known malicious and phishing domains
+! 🦠 6. MALWARE & PHISHING PROTECTION
+! Blocks malware, spyware, ransomware, and known malicious domains
 ! =============================================================================
 ||malicious.com^$important
 ||fraudulent.com^$important
 ||fakeupdate.net^$important
-/([^a-z0-9]|^)(malware|spyware|ransomware|virus|trojan|worm)[._-]/$important
+/(?:^|[_.-])(?:malware|spyware|ransomware|virus|trojan|worm)[_-]/$important
 
 ! =============================================================================
-! 7. SPECIFIC SERVICES AND TLD BLOCKING
-! Blocks unwanted services, subdomains, and ccTLD patterns
+! ⚙️ 7. UNWANTED SERVICES & DOMAINS
+! Blocks domains for specific unwanted services and software
 ! =============================================================================
 ||buffpanel.com^$important
 ||bugsnag.com^$important
-/(^|[_.-]*)?(survey(link)?|stats?)[._-]/$important
-/(^|[_.-]*)?sitescout[._-]/$important
-
-! == (WARNING: TLDs) - Blocks entire countries ==
-/^([a-z0-9-]+\.)*(pk|in|ye|ir|af|id|cn|kr|ps|qa|ug|mz|zw|ng|mx|do|cd)$/$important
+/(?:^|[_.-])(?:survey(?:link)?|stats?)[._-]/$important
+/(?:^|[_.-])sitescout[._-]/$important
 
 ! =============================================================================
-! 8. WHITELISTED DOMAINS – REGEX
-! Allows important and widely trusted domains (including adult entertainment)
+! ✅ 8. ESSENTIAL & TRUSTED WHITELIST - Regex
+! Allows important and widely trusted domains using Regex
 ! =============================================================================
-@@/^(.+[_.-])?(spotify|reddit(media)?|sci-hub|mega|soundcloud)[._-](com|nl|io|tw|se|do)/$important
-@@/^clients[0-9]*\.google[._-]*/$important
-@@/^github(usercontent)?[._-]*/
+@@/^(.+[_.-])?(?:spotify|reddit(?:media)?|sci-hub|mega|soundcloud)[._-](?:com|nl|io|tw|se|do)/$important
+@@/^clients[0-9]*\.google[_.-]*/$important
+@@/^github(?:usercontent)?[._-]*/$important
 
-! === OPTINAL WHITELISTS ===
+! === OPTIONAL WHITELISTS ===
 ! == Utility Whitelist ==
-@@/^ipv(4|6)+\.icanhazip[._-]com/$important
+@@/^ipv(?:4|6)\.icanhazip[_.-]com/$important
 @@||ipinfo.io$important
 
 ! == Gaming Whitelist ==
-@@/^steamcdn-a\.akamaihd[._-]*/
-@@/^nvidia|geforce[._-](com|nl)/$important
-@@/^oculus(vr)?[._-](com|nl)/$important
+@@/^steamcdn-a\.akamaihd[_.-]*/$important
+@@/^(?:nvidia|geforce)[._-](?:com|nl)/$important
+@@/^oculus(?:vr)?[._-](?:com|nl)/$important
 
-! == (WARNING: NSFW) - Whitelists Adult Entertainment Whitelist == 
-@@/^(.+[_.-])?(pornhub|xnxx|xvideos|xhamster|youporn)[._-](com|nl|io|tw|se|do)/$important
+! == (WARNING: NSFW) - Whitelists Adult Entertainment ==
+@@/^(.+[_.-])?(?:pornhub|xnxx|xvideos|xhamster|youporn)[._-](?:com|nl|io|tw|se|do)/$important
 
 ! =============================================================================
-! 9. WHITELISTED DOMAINS – WILDCARDS
-! Allows important and widely trusted domains
+! ✅ 9. ESSENTIAL & TRUSTED WHITELIST - Wildcards
+! Allows important and widely trusted domains using Wildcards
 ! =============================================================================
 @@||torproject.org^$important
 @@||api.telegram.org^$important
@@ -118,8 +140,8 @@
 @@||pool.ntp.org^$important
 
 ! =============================================================================
-! 10. WHITELISTED DOMAINS – SINGLE DOMAINS
-! Allows important and widely trusted domains
+! ✅ 10. ESSENTIAL & TRUSTED WHITELIST - Single Domains
+! Allows important and widely trusted single domains
 ! =============================================================================
 ! == AdLists ==
 @@dbl.oisd.nl^$important
@@ -130,7 +152,7 @@
 @@time.cloudflare.com^$important
 
 ! =============================================================================
-! 10. WHITELISTED TORRENT TRACKERS
+! 📥 11. WHITELISTED TORRENT TRACKERS
 ! Allows common torrent trackers for file sharing
 ! =============================================================================
 @@||tracker.openbittorrent.com^$important
@@ -150,12 +172,13 @@
 @@||iptorrents.com^$important
 
 ! =============================================================================
-! 11. INDUSTRY BEST PRACTICES (COMMENTS)
+! 📌 12. INDUSTRY BEST PRACTICES & NOTES
+! Important considerations for maintaining filter quality
 ! =============================================================================
 ! 1) Regularly update filters from trusted sources (EasyList, EasyPrivacy, etc.).
 ! 2) Use anchored regex to avoid partial matches (e.g., blocking "adventure").
-! 3) Whitelist sparingly, only for essential or trusted domains.
+! 3) Keep whitelists minimal to avoid bypassing protections.
 ! 4) Monitor logs for false positives and refine patterns as needed.
-! 5) Segment filters into aggressive and moderate lists, if applicable.
-! 6) Use "$important" judiciously to override other rules.
-! 7) Reassess TLD and domain blocks periodically for legitimate sites.
+! 5) Segment filters into aggressive and moderate lists if necessary.
+! 6) Use "$important" only when absolutely necessary.
+! 7) Reassess domain blocks periodically to avoid false positives.
