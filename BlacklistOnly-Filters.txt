@@ -1,6 +1,6 @@
 ! =============================================================================
 ! 🛑 1. GENERAL ADVERTISEMENT BLOCKING
-! Blocks common ad-serving domains and subdomains
+! Comprehensive domain and regex-based ad filtering
 ! =============================================================================
 ||aaxads.com^$important
 ||doubleclick.net^$important
@@ -9,10 +9,10 @@
 ||googlesyndication.com^$important
 ||ads.yahoo.com^$important
 
-! == Comprehensive regex to block common ad-serving keywords ==
-/(?:^|[_.-])(?:ads?|banners?|doubleclick|flashtalking|scorecardresearch|yieldmanager|googlesyndication|ad(?:choice|image)|pixel|advert(?:is(?:e|ing)|isements?)?|impression)[._-]/$important
+! == Optimized regex for broad ad keyword blocking ==
+/(?:^|[_.-])(?:ads?|banners?|doubleclick|flashtalking|scorecardresearch|yieldmanager|googlesyndication|ad(?:choice|image)|pixel|advert(?:is(?:e|ing)|isements?)?|impression)[_.-]/$important
 
-! == Specific subdomain-level patterns for finer control ==
+! == Refined subdomain-specific ad blocking ==
 /(?:^|[_.-])ad(?:choice|image|nxs|serv(?:er|ice)?|sdk|track(?:er|ing)?)\./$important
 /(?:^|[_.-])ads(?:yahoo|dk)?\./$important
 /(?:^|[_.-])ad(?:sxv?[0-9]*|system|banner|track|serv|choice)\./$important
@@ -24,15 +24,13 @@
 /(?:^|[_.-])advert(?:s|is(?:ing|ements?)?)?[0-9]*[_.-]/$important
 /(?:^|[_.-])aff(?:iliat(?:es|ion))?[._-]/$important
 
-! == Advanced Regex: Blocks URLs with common ad-related file extensions in path ==
+! == Block ad-related file extensions and paths ==
 /\.(?:ad|banner|popup|advert|swf|flv|img|iframe)\W*$/$important,domain=~first-party.com
-
-! == Advanced Regex: Blocks URLs containing common ad-related path segments ==
 /(?:/|_)(?:ads?|banners?|advert(?:ising|isements?)?|promos?|click(?:s|through)?|redirect|popup(?:s)?)(?:/|_|$)/$important,domain=~first-party.com
 
 ! =============================================================================
 ! 📺 2. PLATFORM-SPECIFIC AD BLOCKING
-! Blocks ads and tracking on specific platforms
+! Blocks ads and tracking on major platforms
 ! =============================================================================
 /(?:^|[_.-])(?:ads?|captive|logs|cloudservices)\.roku\.com/$important
 /(?:^|[_.-])clicks\.beap\.bc\.yahoo\.com/$important
@@ -41,7 +39,7 @@
 
 ! =============================================================================
 ! 🔍 3. TRACKING & ANALYTICS BLOCKING
-! Blocks tracking, analytics, telemetry, and pixels - Enhanced patterns
+! Blocks tracking, analytics, telemetry, and pixels
 ! =============================================================================
 /(?:^|[_.-])(?:tracking|track(?:er|ing)?|telemetry|metrics?|beacons?|analytics?|pixels?|crashlytics|behavior|data-collect)[._-]/$important
 /(?:^|[_.-])tracking\./$important
@@ -52,15 +50,15 @@
 /(?:^|[_.-])stat(?:s|istics)?(?:-[a-z0-9\-]*)?\.[a-z0-9\-]*\./$important
 /(?:^|[_.-])telemetry(?:-[a-z0-9\-]*)?\.[a-z0-9\-]*\./$important
 
-! == Advanced Regex: Blocks URLs with common tracking URL parameters ==
+! == Block tracking parameters in URLs ==
 /\?(?:utm_|ref_|source|origin|trk|cid|pid|aid|gclid|fbclid|mc_|mb_|msclkid|oly_anon_id|oly_enc_id|vero_|ga_|awc|yclid|ef_id|s_kwcid|mscklid|ttclid|twclid|li_fat_id|li_o_id|wickedid)\w*=/$important,domain=~first-party.com
 
-! == Advanced Regex: Blocks URLs containing generic tracking keywords in path segments ==
+! == Block tracking-related keywords in paths ==
 /(?:/|_)(?:track|pixel|collect|monitor|analytic|telemetry|beacon|stat|metric)(?:s)?(?:/|_|$)/$important,domain=~first-party.com
 
 ! =============================================================================
 ! ⛏️ 4. CRYPTOCURRENCY MINING & RESOURCE ABUSE
-! Blocks known crypto-mining domains and resource drainers
+! Blocks crypto-mining domains and resource drainers
 ! =============================================================================
 ||coinhive.com^$important
 ||crypto-loot.com^$important
@@ -71,16 +69,13 @@
 
 ! =============================================================================
 ! ⚠️ 5. SCAM & FRAUD BLOCKING
-! Blocks Discord Nitro scams, crypto scams, phishing domains
+! Blocks scam, phishing, and fraudulent domains
 ! =============================================================================
-! == Discord Nitro scams ==
 /(?:^|[_.-])d[il]sc(?:or|ro)ds?-?(?:g[il]ft|n[il]tro|gifts?-?discord)[.-].*/$important
-
-! == Crypto + scam combinations ==
 /(?:^|[_.-])(?:crypto|bitcoin|ether|nft|scam|phish)[_-](?:gift|promo|airdrop)\..*/$important
 /(?:[A-Za-z0-9.-]*\.)?gifts?-?discord\..*/$important
 
-! == Known scam domains ==
+! == Known scam and fraud domains ==
 ||malwaredomainlist.com^$important
 ||phishingdatabase.com^$important
 ||scam-site-checker.com^$important
@@ -96,7 +91,7 @@
 
 ! =============================================================================
 ! ⚙️ 7. UNWANTED SERVICES & DOMAINS
-! Blocks domains for specific unwanted services and software
+! Blocks unwanted analytics, telemetry, and tracking services
 ! =============================================================================
 ||buffpanel.com^$important
 ||bugsnag.com^$important
