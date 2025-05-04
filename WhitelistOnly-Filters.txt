@@ -2,27 +2,42 @@
 ! ✅ 8. ESSENTIAL & TRUSTED WHITELIST - Regex
 ! Allows important and widely trusted domains using Regex
 ! =============================================================================
-@@/^(.+[_.-])?(?:spotify|reddit(?:media)?|sci-hub|mega|soundcloud)[._-](?:com|nl|io|tw|se|do)/$important
-@@/^clients[0-9]*\.google[_.-]*/$important
-@@/^github(?:usercontent)?[._-]*/$important
+
+! Media and content platforms
+@@/^(?:[a-z0-9-]+\.)*(?:spotify|reddit(?:media)?|sci-hub|mega|soundcloud)[.-](?:com|nl|io|tw|se|do)/$important
+
+! Essential services
+@@/^clients[0-9]*\.google[.-]*/$important
+@@/^github(?:usercontent)?[.-]*/$important
+@@/^cdn\.jsdelivr\.net/$important
+@@/^(?:[a-z0-9-]+\.)*(?:wikipedia|wikimedia)\.org/$important
+@@/^(?:[a-z0-9-]+\.)*(?:microsoft|azure|office)\.com/$important
 
 ! === OPTIONAL WHITELISTS ===
-! == Utility Whitelist ==
-@@/^ipv(?:4|6)\.icanhazip[_.-]com/$important
-@@||ipinfo.io$important
+! Utility Whitelist
+@@/^ipv(?:4|6)\.icanhazip[.-]com/$important
+@@||ipinfo.io^$important
+@@||1.1.1.1^$important
+@@||8.8.8.8^$important
+@@||dns.google^$important
 
-! == Gaming Whitelist ==
-@@/^steamcdn-a\.akamaihd[_.-]*/$important
-@@/^(?:nvidia|geforce)[._-](?:com|nl)/$important
-@@/^oculus(?:vr)?[._-](?:com|nl)/$important
+! Gaming Whitelist
+@@/^steamcdn-a\.akamaihd[.-]*/$important
+@@/^(?:nvidia|geforce)[.-](?:com|nl)/$important
+@@/^oculus(?:vr)?[.-](?:com|nl)/$important
+@@||ea.com^$important
+@@||epicgames.com^$important
+@@||blizzard.com^$important
+@@||battlenet.com^$important
 
-! == (WARNING: NSFW) - Whitelists Adult Entertainment ==
-@@/^(.+[_.-])?(?:pornhub|xnxx|xvideos|xhamster|youporn)[._-](?:com|nl|io|tw|se|do)/$important
+! (WARNING: NSFW) - Whitelists Adult Entertainment
+@@/^(?:[a-z0-9-]+\.)*(?:pornhub|xnxx|xvideos|xhamster|youporn)[.-](?:com|nl|io|tw|se|do)/$important
 
 ! =============================================================================
 ! ✅ 9. ESSENTIAL & TRUSTED WHITELIST - Wildcards
 ! Allows important and widely trusted domains using Wildcards
 ! =============================================================================
+
 @@||torproject.org^$important
 @@||api.telegram.org^$important
 @@||github.com^$important
@@ -33,23 +48,48 @@
 @@||stackoverflow.com^$important
 @@||archlinux.org^$important
 @@||pool.ntp.org^$important
+@@||gitlab.com^$important
+@@||npmjs.com^$important
+@@||nodejs.org^$important
+@@||pypi.org^$important
+@@||python.org^$important
+@@||apple.com^$important
+@@||icloud.com^$important
+@@||protonmail.com^$important
+@@||proton.me^$important
+@@||signal.org^$important
 
 ! =============================================================================
 ! ✅ 10. ESSENTIAL & TRUSTED WHITELIST - Single Domains
 ! Allows important and widely trusted single domains
 ! =============================================================================
-! == AdLists ==
+
+! AdLists
 @@dbl.oisd.nl^$important
 @@adaway.org^$important
+@@easylist.to^$important
+@@pgl.yoyo.org^$important
 
-! == Time Services ==
+! Time Services
 @@time.windows.com^$important
 @@time.cloudflare.com^$important
+@@time.apple.com^$important
+@@time.google.com^$important
+@@ntp.ubuntu.com^$important
+
+! Essential Services
+@@api.github.com^$important
+@@raw.githubusercontent.com^$important
+@@cdn.jsdelivr.net^$important
+@@cdnjs.cloudflare.com^$important
+@@fonts.googleapis.com^$important
+@@fonts.gstatic.com^$important
 
 ! =============================================================================
 ! 📥 11. WHITELISTED TORRENT TRACKERS
 ! Allows common torrent trackers for file sharing
 ! =============================================================================
+
 @@||tracker.openbittorrent.com^$important
 @@||tracker.leechers-paradise.org^$important
 @@||tracker.coppersurfer.tk^$important
@@ -65,15 +105,25 @@
 @@||tracker.torrent.eu.org^$important
 @@||tracker.fastdownload.xyz^$important
 @@||iptorrents.com^$important
+@@||nyaa.si^$important
+@@||1337x.to^$important
+@@||thepiratebay.org^$important
+@@||rarbg.to^$important
+@@||yts.mx^$important
+@@||eztv.io^$important
 
 ! =============================================================================
 ! 📌 12. INDUSTRY BEST PRACTICES & NOTES
 ! Important considerations for maintaining filter quality
 ! =============================================================================
+
 ! 1) Regularly update filters from trusted sources (EasyList, EasyPrivacy, etc.).
-! 2) Use anchored regex to avoid partial matches (e.g., blocking "adventure").
+! 2) Use anchored regex (^) to avoid partial matches (e.g., blocking "adventure").
 ! 3) Keep whitelists minimal to avoid bypassing protections.
 ! 4) Monitor logs for false positives and refine patterns as needed.
 ! 5) Segment filters into aggressive and moderate lists if necessary.
 ! 6) Use "$important" only when absolutely necessary.
 ! 7) Reassess domain blocks periodically to avoid false positives.
+! 8) Test changes incrementally to identify problematic rules.
+! 9) Consider using more specific domain blocks instead of broad regex when possible.
+! 10) Maintain separate whitelists for different categories (work, personal, etc.).
