@@ -2,98 +2,163 @@
 ! 🛑 1. GENERAL ADVERTISEMENT BLOCKING
 ! Comprehensive domain and regex-based ad filtering
 ! =============================================================================
+
+! Major ad networks - direct domain blocking
 ||aaxads.com^$important
 ||doubleclick.net^$important
 ||adservice.google.com^$important
 ||adnxs.com^$important
 ||googlesyndication.com^$important
 ||ads.yahoo.com^$important
+||taboola.com^$important
+||outbrain.com^$important
+||criteo.com^$important
+||pubmatic.com^$important
+||rubiconproject.com^$important
 
-! == Optimized regex for broad ad keyword blocking ==
-/(?:^|[_.-])(?:ads?|banners?|doubleclick|flashtalking|scorecardresearch|yieldmanager|googlesyndication|ad(?:choice|image)|pixel|advert(?:is(?:e|ing)|isements?)?|impression)[_.-]/$important
+! Optimized regex for broad ad keyword blocking - anchored to avoid false positives
+/^(?:[a-z0-9-]+\.)*(?:ads?|banners?|doubleclick|flashtalking|scorecardresearch|yieldmanager|googlesyndication|ad(?:choice|image)|pixel|advert(?:is(?:e|ing)|isements?))[.-]/$important
 
-! == Refined subdomain-specific ad blocking ==
-/(?:^|[_.-])ad(?:choice|image|nxs|serv(?:er|ice)?|sdk|track(?:er|ing)?)\./$important
-/(?:^|[_.-])ads(?:yahoo|dk)?\./$important
-/(?:^|[_.-])ad(?:sxv?[0-9]*|system|banner|track|serv|choice)\./$important
-/(?:^|[_.-])adim(?:g|age)+s?(?:-[a-z0-9\-]*)?\.[a-z0-9\-]*\./$important
-/(?:^|[_.-])adsdk\./$important
-/(?:^|[_.-])adserv\./$important
-/(?:^|[_.-])adse?rv(?:er|ice)?s?[0-9]*[_.-]/$important
-/(?:^|[_.-])adtrack(?:er|ing)?[0-9]*[_.-]/$important
-/(?:^|[_.-])advert(?:s|is(?:ing|ements?)?)?[0-9]*[_.-]/$important
-/(?:^|[_.-])aff(?:iliat(?:es|ion))?[._-]/$important
+! Refined subdomain-specific ad blocking
+/^(?:[a-z0-9-]+\.)*ad(?:choice|image|nxs|serv(?:er|ice)?|sdk|track(?:er|ing)?)\./$important
+/^(?:[a-z0-9-]+\.)*ads(?:yahoo|dk)?\./$important
+/^(?:[a-z0-9-]+\.)*ad(?:sxv?[0-9]*|system|banner|track|serv|choice)\./$important
+/^(?:[a-z0-9-]+\.)*adim(?:g|age)+s?(?:-[a-z0-9-]*)?\.[a-z0-9-]*\./$important
+/^(?:[a-z0-9-]+\.)*adsdk\./$important
+/^(?:[a-z0-9-]+\.)*adserv\./$important
+/^(?:[a-z0-9-]+\.)*adse?rv(?:er|ice)?s?[0-9]*[.-]/$important
+/^(?:[a-z0-9-]+\.)*adtrack(?:er|ing)?[0-9]*[.-]/$important
+/^(?:[a-z0-9-]+\.)*advert(?:s|is(?:ing|ements?)?)?[0-9]*[.-]/$important
+/^(?:[a-z0-9-]+\.)*aff(?:iliat(?:es|ion))?[.-]/$important
 
-! == Block ad-related file extensions and paths ==
-/\.(?:ad|banner|popup|advert|swf|flv|img|iframe)\W*$/$important,domain=~first-party.com
-/(?:/|_)(?:ads?|banners?|advert(?:ising|isements?)?|promos?|click(?:s|through)?|redirect|popup(?:s)?)(?:/|_|$)/$important,domain=~first-party.com
+! Block ad-related file extensions and paths - with domain exclusion
+/\.(?:ad|banner|popup|advert|swf|flv|img|iframe)\W*$/$important,domain=~first-party.com|~github.com|~stackoverflow.com
+/(?:/|_)(?:ads?|banners?|advert(?:ising|isements?)?|promos?|click(?:s|through)?|redirect|popup(?:s)?)(?:/|_|$)/$important,domain=~first-party.com|~github.com|~stackoverflow.com
 
 ! =============================================================================
 ! 📺 2. PLATFORM-SPECIFIC AD BLOCKING
 ! Blocks ads and tracking on major platforms
 ! =============================================================================
-/(?:^|[_.-])(?:ads?|captive|logs|cloudservices)\.roku\.com/$important
-/(?:^|[_.-])clicks\.beap\.bc\.yahoo\.com/$important
-/(?:^|[_.-])google[_.-]?syndicat(?:e|ion)+[_.-]/$important
-/(?:^|[_.-])secure\.footprint\.net/$important
+
+! Streaming platforms
+/^(?:[a-z0-9-]+\.)*(?:ads?|captive|logs|cloudservices)\.roku\.com/$important
+/^(?:[a-z0-9-]+\.)*clicks\.beap\.bc\.yahoo\.com/$important
+/^(?:[a-z0-9-]+\.)*google[.-]?syndicat(?:e|ion)+[.-]/$important
+/^(?:[a-z0-9-]+\.)*secure\.footprint\.net/$important
+||ads-api.tiktok.com^$important
+||ads.youtube.com^$important
+||ads-twitter.com^$important
+||ads.reddit.com^$important
 
 ! =============================================================================
 ! 🔍 3. TRACKING & ANALYTICS BLOCKING
 ! Blocks tracking, analytics, telemetry, and pixels
 ! =============================================================================
-/(?:^|[_.-])(?:tracking|track(?:er|ing)?|telemetry|metrics?|beacons?|analytics?|pixels?|crashlytics|behavior|data-collect)[._-]/$important
-/(?:^|[_.-])tracking\./$important
-/(?:^|[_.-])beacons?[._-]/$important
-/(?:^|[_.-])crashlytics[_.-]/$important
-/(?:^|[_.-])analytics?[._-]/$important
-/(?:^|[_.-])metric\./$important
-/(?:^|[_.-])stat(?:s|istics)?(?:-[a-z0-9\-]*)?\.[a-z0-9\-]*\./$important
-/(?:^|[_.-])telemetry(?:-[a-z0-9\-]*)?\.[a-z0-9\-]*\./$important
 
-! == Block tracking parameters in URLs ==
-/\?(?:utm_|ref_|source|origin|trk|cid|pid|aid|gclid|fbclid|mc_|mb_|msclkid|oly_anon_id|oly_enc_id|vero_|ga_|awc|yclid|ef_id|s_kwcid|mscklid|ttclid|twclid|li_fat_id|li_o_id|wickedid)\w*=/$important,domain=~first-party.com
+! Major analytics platforms
+||google-analytics.com^$important
+||analytics.google.com^$important
+||metrics.apple.com^$important
+||smetrics.apple.com^$important
+||metrics.microsoft.com^$important
+||analytics.yahoo.com^$important
+||analytics.twitter.com^$important
+||analytics.facebook.com^$important
 
-! == Block tracking-related keywords in paths ==
-/(?:/|_)(?:track|pixel|collect|monitor|analytic|telemetry|beacon|stat|metric)(?:s)?(?:/|_|$)/$important,domain=~first-party.com
+! Generic tracking domains
+/^(?:[a-z0-9-]+\.)*(?:tracking|track(?:er|ing)?|telemetry|metrics?|beacons?|analytics?|pixels?|crashlytics|behavior|data-collect)[.-]/$important
+/^(?:[a-z0-9-]+\.)*tracking\./$important
+/^(?:[a-z0-9-]+\.)*beacons?[.-]/$important
+/^(?:[a-z0-9-]+\.)*crashlytics[.-]/$important
+/^(?:[a-z0-9-]+\.)*analytics?[.-]/$important
+/^(?:[a-z0-9-]+\.)*metric\./$important
+/^(?:[a-z0-9-]+\.)*stat(?:s|istics)?(?:-[a-z0-9-]*)?\.[a-z0-9-]*\./$important
+/^(?:[a-z0-9-]+\.)*telemetry(?:-[a-z0-9-]*)?\.[a-z0-9-]*\./$important
+
+! Block tracking parameters in URLs - improved to avoid false positives
+/\?(?:utm_|ref_|source=|origin=|trk=|cid=|pid=|aid=|gclid=|fbclid=|mc_|mb_|msclkid=|oly_anon_id=|oly_enc_id=|vero_|ga_|awc=|yclid=|ef_id=|s_kwcid=|mscklid=|ttclid=|twclid=|li_fat_id=|li_o_id=|wickedid=)/$important,domain=~first-party.com|~youtube.com|~github.com
+
+! Block tracking-related keywords in paths - with important exceptions
+/(?:/|_)(?:track|pixel|collect|monitor|analytic|telemetry|beacon|stat|metric)(?:s)?(?:/|_|$)/$important,domain=~first-party.com|~github.com|~cloudflare.com|~ubuntu.com|~archlinux.org
 
 ! =============================================================================
 ! ⛏️ 4. CRYPTOCURRENCY MINING & RESOURCE ABUSE
 ! Blocks crypto-mining domains and resource drainers
 ! =============================================================================
+
 ||coinhive.com^$important
 ||crypto-loot.com^$important
 ||webminepool.com^$important
 ||minero.cc^$important
 ||hashvault.pro^$important
 ||redshell.io^$important
+||coin-hive.com^$important
+||jsecoin.com^$important
+||cryptoloot.pro^$important
+||webmine.cz^$important
+||monerominer.rocks^$important
+||deepminer.org^$important
+||freecontent.date^$important
+||cryptonoter.com^$important
+||miner.start^$important
+
+! Generic crypto mining patterns
+/^(?:[a-z0-9-]+\.)*(?:coin-?hive|crypto-?miner|web-?miner|bitcoin-?miner)\./$important
 
 ! =============================================================================
 ! ⚠️ 5. SCAM & FRAUD BLOCKING
 ! Blocks scam, phishing, and fraudulent domains
 ! =============================================================================
-/(?:^|[_.-])d[il]sc(?:or|ro)ds?-?(?:g[il]ft|n[il]tro|gifts?-?discord)[.-].*/$important
-/(?:^|[_.-])(?:crypto|bitcoin|ether|nft|scam|phish)[_-](?:gift|promo|airdrop)\..*/$important
-/(?:[A-Za-z0-9.-]*\.)?gifts?-?discord\..*/$important
 
-! == Known scam and fraud domains ==
+! Discord and gaming scams
+/^(?:[a-z0-9-]+\.)*d[il]sc(?:or|ro)ds?-?(?:g[il]ft|n[il]tro|gifts?-?discord)[.-].*/$important
+/^(?:[a-z0-9-]+\.)*(?:crypto|bitcoin|ether|nft|scam|phish)[_-](?:gift|promo|airdrop)\..*/$important
+/^(?:[a-z0-9-]+\.)*gifts?-?discord\..*/$important
+/^(?:[a-z0-9-]+\.)*free-?(?:vbucks|robux|nitro|steam-?keys)\..*/$important
+
+! Known scam and fraud domains
 ||malwaredomainlist.com^$important
 ||phishingdatabase.com^$important
 ||scam-site-checker.com^$important
+||freerobuxnow.com^$important
+||freevbucksgenerator.com^$important
+||freepsncodes.com^$important
+||giftcardgenerator.com^$important
 
 ! =============================================================================
 ! 🦠 6. MALWARE & PHISHING PROTECTION
 ! Blocks malware, spyware, ransomware, and known malicious domains
 ! =============================================================================
+
 ||malicious.com^$important
 ||fraudulent.com^$important
 ||fakeupdate.net^$important
-/(?:^|[_.-])(?:malware|spyware|ransomware|virus|trojan|worm)[_-]/$important
+||malware.expert^$important
+||ransomware.live^$important
+||virusdie.com^$important
+||malwareremovalguides.com^$important
+
+! Generic malware patterns
+/^(?:[a-z0-9-]+\.)*(?:malware|spyware|ransomware|virus|trojan|worm)[.-]/$important
+/^(?:[a-z0-9-]+\.)*(?:hack|crack|keygen|patch|warez|pirate)[.-](?:download|free|generator)\./$important
 
 ! =============================================================================
 ! ⚙️ 7. UNWANTED SERVICES & DOMAINS
 ! Blocks unwanted analytics, telemetry, and tracking services
 ! =============================================================================
+
 ||buffpanel.com^$important
 ||bugsnag.com^$important
-/(?:^|[_.-])(?:survey(?:link)?|stats?)[._-]/$important
-/(?:^|[_.-])sitescout[._-]/$important
+||mixpanel.com^$important
+||amplitude.com^$important
+||segment.com^$important
+||hotjar.com^$important
+||fullstory.com^$important
+||mouseflow.com^$important
+||sessioncam.com^$important
+||luckyorange.com^$important
+
+! Generic unwanted service patterns
+/^(?:[a-z0-9-]+\.)*(?:survey(?:link)?|stats?)[.-]/$important
+/^(?:[a-z0-9-]+\.)*sitescout[.-]/$important
+/^(?:[a-z0-9-]+\.)*(?:userreplay|session-?replay|heat-?map)[.-]/$important
