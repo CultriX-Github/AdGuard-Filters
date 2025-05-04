@@ -1,0 +1,157 @@
+! =============================================================================
+! 🛡️ AdGuard Custom Filter List - Enhanced & Optimized 🛡️
+! Comprehensive ad blocking, tracking protection, and security.
+! Last Updated: 2024-07-25
+! =============================================================================
+
+! =============================================================================
+! 🛑 1. GENERAL ADVERTISEMENT BLOCKING
+! Blocks generic ad-serving domains and patterns.
+! =============================================================================
+
+! Static Domain Blocking
+||aaxads.com^$important
+||doubleclick.net^$important
+||adservice.google.com^$important
+||adnxs.com^$important
+||googlesyndication.com^$important
+||ads.yahoo.com^$important
+
+! Regex-Based Blocking (Optimized)
+/(?:^|[_.-])(?:ads?|banners?|doubleclick|flashtalking|scorecardresearch|yieldmanager|googlesyndication|ad(?:choice|image)|pixel|advert(?:is(?:e|ing)|isements?)?|impression)[_.-]/$important
+
+! Subdomain-Specific Blocking
+/(?:^|[_.-])ad(?:choice|image|nxs|serv(?:er|ice)?|sdk|track(?:er|ing)?)\./$important
+/(?:^|[_.-])ads(?:yahoo|dk)?\./$important
+/(?:^|[_.-])ad(?:sxv?[0-9]*|system|banner|track|serv|choice)\./$important
+/(?:^|[_.-])adim(?:g|age)+s?(?:-[a-z0-9\-]*)?\.[a-z0-9\-]*\./$important
+/(?:^|[_.-])adsdk\./$important
+/(?:^|[_.-])adserv\./$important
+/(?:^|[_.-])adse?rv(?:er|ice)?s?[0-9]*[_.-]/$important
+/(?:^|[_.-])adtrack(?:er|ing)?[0-9]*[_.-]/$important
+/(?:^|[_.-])advert(?:s|is(?:ing|ements?)?)?[0-9]*[_.-]/$important
+/(?:^|[_.-])aff(?:iliat(?:es|ion))?[._-]/$important
+
+! File Extension Blocking (Apply to First-Party Domains Only)
+/\.(?:ad|banner|popup|advert|swf|flv|img|iframe)\W*$/$important,domain=~first-party.com
+
+! Path-Based Blocking (Apply to First-Party Domains Only)
+/(?:\/|_)(?:ads?|banners?|advert(?:ising|isements?)?|promos?|click(?:s|through)?|redirect|popup(?:s)?)(?:\/|_|$)/$important,domain=~first-party.com
+
+! =============================================================================
+! 📺 2. PLATFORM-SPECIFIC AD BLOCKING
+! Targets ads and tracking on specific platforms.
+! =============================================================================
+
+! Roku
+/(?:^|[_.-])(?:ads?|captive|logs|cloudservices)\.roku\.com/$important
+
+! Yahoo
+/(?:^|[_.-])clicks\.beap\.bc\.yahoo\.com/$important
+
+! Google Syndication
+/(?:^|[_.-])google[_.-]?syndicat(?:e|ion)+[_.-]/$important
+
+! Footprint
+/(?:^|[_.-])secure\.footprint\.net/$important
+
+! =============================================================================
+! 🔍 3. TRACKING & ANALYTICS BLOCKING
+! Blocks domains and patterns associated with tracking user activity.
+! =============================================================================
+
+! General Tracking and Analytics
+/(?:^|[_.-])(?:tracking|track(?:er|ing)?|telemetry|metrics?|beacons?|analytics?|pixels?|crashlytics|behavior|data-collect)[._-]/$important
+/(?:^|[_.-])tracking\./$important
+/(?:^|[_.-])beacons?[._-]/$important
+/(?:^|[_.-])crashlytics[_.-]/$important
+/(?:^|[_.-])analytics?[._-]/$important
+/(?:^|[_.-])metric\./$important
+/(?:^|[_.-])stat(?:s|istics)?(?:-[a-z0-9\-]*)?\.[a-z0-9\-]*\./$important
+/(?:^|[_.-])telemetry(?:-[a-z0-9\-]*)?\.[a-z0-9\-]*\./$important
+
+! Common Tracking Domains (Added)
+||scorecardresearch.com^$important
+||bluekai.com^$important
+||segment.io^$important
+||amplitude.com^$important
+||mixpanel.com^$important
+
+! URL Parameter Stripping (First-Party Only)
+/\?(?:utm_|ref_|source|origin|trk|cid|pid|aid|gclid|fbclid|mc_|mb_|msclkid|oly_anon_id|oly_enc_id|vero_|ga_|awc|yclid|ef_id|s_kwcid|mscklid|ttclid|twclid|li_fat_id|li_o_id|wickedid)\w*=/$important,domain=~first-party.com
+
+! Path-Based Tracking Keywords (First-Party Only)
+/(?:\/|_)(?:track|pixel|collect|monitor|analytic|telemetry|beacon|stat|metric)(?:s)?(?:\/|_|$)/$important,domain=~first-party.com
+
+! =============================================================================
+! ⛏️ 4. CRYPTOCURRENCY MINING & RESOURCE ABUSE
+! Protects against cryptocurrency mining scripts and resource drainers.
+! =============================================================================
+
+! Known Mining Domains
+||coinhive.com^$important
+||crypto-loot.com^$important
+||webminepool.com^$important
+||minero.cc^$important
+||hashvault.pro^$important
+||redshell.io^$important
+
+! Additional Mining Domains (Added)
+||jsecoin.com^$important
+||authedmine.com^$important
+
+! =============================================================================
+! ⚠️ 5. SCAM & FRAUD BLOCKING
+! Blocks domains associated with scams, phishing, and fraud.
+! =============================================================================
+
+! Discord Scams
+/(?:^|[_.-])d[il]sc(?:or|ro)ds?-?(?:g[il]ft|n[il]tro|gifts?-?discord)[.-].*/$important
+
+! Crypto Scams
+/(?:^|[_.-])(?:crypto|bitcoin|ether|nft|scam|phish)[_-](?:gift|promo|airdrop)\..*/$important
+/(?:[A-Za-z0-9.-]*\.)?gifts?-?discord\..*/$important
+
+! Scam Reporting Sites
+||malwaredomainlist.com^$important
+||phishingdatabase.com^$important
+||scam-site-checker.com^$important
+||scamadvisor.com^$important
+||scamwatch.com^$important
+
+! Additional Scam Domains (Added)
+||verify-your-account.com^$important
+||claim-reward.net^$important
+||free-money.site^$important
+
+! =============================================================================
+! 🦠 6. MALWARE & PHISHING PROTECTION
+! Blocks domains known to distribute malware or host phishing attacks.
+! =============================================================================
+
+! General Malware and Phishing
+||malicious.com^$important
+||fraudulent.com^$important
+||fakeupdate.net^$important
+/(?:^|[_.-])(?:malware|spyware|ransomware|virus|trojan|worm)[_-]/$important
+
+! Malware Distribution Sites (Added)
+||download-software.net^$important
+||update-flash.com^$important
+||install-app.net^$important
+
+! =============================================================================
+! ⚙️ 7. UNWANTED SERVICES & DOMAINS
+! Blocks telemetry, analytics, and other unwanted services.
+! =============================================================================
+
+! Unwanted Services
+||buffpanel.com^$important
+||bugsnag.com^$important
+/(?:^|[_.-])(?:survey(?:link)?|stats?)[._-]/$important
+/(?:^|[_.-])sitescout[._-]/$important
+
+! Telemetry and Data Collection (Added)
+||amplitude.com^$important
+||mixpanel.com^$important
+||heap.io^$important
