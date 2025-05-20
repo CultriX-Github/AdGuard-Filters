@@ -1,0 +1,207 @@
+! =============================================================================
+! Title: Combined Optimal AdGuard DNS Filter List
+! Description: A highly optimized list for AdGuard DNS, merging the best of multiple refined sources.
+! Version: v1.0.0 (iteration=1)
+! Last Updated: 2025-05-21
+!
+! HOW TO USE:
+!    • Add this file to your AdGuard DNS custom filtering rules.
+!    • This list contains only domain-based rules (e.g., ||example.com^)
+!      and domain-specific regular expressions (e.g., /^ads\./$domain)
+!      that are effective at the DNS level.
+!    • Path-based rules, URL parameter rules, cosmetic rules, and most
+!      client-side modifiers have been excluded as they are not supported by DNS filtering.
+! =============================================================================
+
+! =============================================================================
+! 🛑 1. CORE AD BLOCKING
+! Blocks major ad networks and generic ad-serving domains/patterns.
+! =============================================================================
+! --- 1.1 Major Ad Networks (Specific Domains) ---
+||aaxads.com^
+||adservice.google.com^
+||advertising.com^
+||adnxs.com^
+||amazon-adsystem.com^
+||ads.yahoo.com^
+||adsrvr.org^
+||bidswitch.net^
+||casalemedia.com^
+||criteo.com^
+||doubleclick.net^
+||googlesyndication.com^
+||moatads.com^
+||openx.net^
+||outbrain.com^
+||pubmatic.com^
+||rubiconproject.com^
+||taboola.com^
+
+! --- 1.2 Ad Domain Patterns (Optimized Regex for DNS) ---
+/^(?:[a-z0-9-]+\.)*(?:ad(?:s?[xv]?|serv(?:er|ice)?s?)|advert(?:is(?:e|ing)|ements?)|banners?)\.[a-z.]{2,}$/$domain
+! Additional specific patterns if they offer unique coverage not fully optimized by the broad regex above:
+/^(?:[a-z0-9-]+\.)*flashtalking\.[a-z.]{2,}$/$domain
+/^(?:[a-z0-9-]+\.)*yieldmanager\.[a-z.]{2,}$/$domain
+/^(?:[a-z0-9-]+\.)*adchoice\.[a-z.]{2,}$/$domain
+/^(?:[a-z0-9-]+\.)*aff(?:iliat(?:es|ion))?\.[a-z.]{2,}$/$domain
+/^(?:[a-z0-9-]+\.)*adsdk\.[a-z.]{2,}$/$domain
+/^(?:[a-z0-9-]+\.)*adsystem\.[a-z.]{2,}$/$domain
+
+! =============================================================================
+! 📺 2. PLATFORM-SPECIFIC AD BLOCKING
+! Targets ads on media platforms and social networks.
+! =============================================================================
+/^(?:[a-z0-9-]+\.)*(?:ads?|captive|logs|cloudservices)\.roku\.com$/$domain
+/^(?:[a-z0-9-]+\.)*clicks\.beap\.bc\.yahoo\.com$/$domain
+/^(?:[a-z0-9-]+\.)*google[_.-]?syndicat(?:e|ion)+\.[a-z.]{2,}$/$domain
+/^(?:[a-z0-9-]+\.)*secure\.footprint\.net$/$domain
+/^(?:[a-z0-9-]+\.)*ads\.facebook\.com$/$domain
+/^(?:[a-z0-9-]+\.)*ads\.twitter\.com$/$domain
+/^(?:[a-z0-9-]+\.)*ads\.linkedin\.com$/$domain
+/^(?:[a-z0-9-]+\.)*ads\.reddit\.com$/$domain
+/^(?:[a-z0-9-]+\.)*ads\.tiktok\.com$/$domain
+/^(?:[a-z0-9-]+\.)*ads\.snapchat\.com$/$domain
+/^(?:[a-z0-9-]+\.)*ads-api\.amazon\.com$/$domain
+
+! =============================================================================
+! 🔍 3. TRACKING & ANALYTICS BLOCKING
+! Blocks analytics, tracking pixels, and telemetry domains.
+! =============================================================================
+! --- 3.1 Major Analytics & Tracking Services (Specific Domains) ---
+||analytics.google.com^
+||google-analytics.com^
+||amplitude.com^
+||bluekai.com^
+||clarity.ms^
+||cname-tracking.com^
+||crazyegg.com^
+||dynatrace.com^
+||fathom.com^
+||fullstory.com^
+||heap.io^
+||hotjar.com^
+||kissmetrics.com^
+||matomo.cloud^
+||mixpanel.com^
+||mouseflow.com^
+||newrelic.com^
+||omtrdc.net^
+||optimizely.com^
+||plausible.io^
+||quantserve.com^
+||scorecardresearch.com^
+||segment.com^
+||segment.io^
+||sentry.io^
+||statcounter.com^
+
+! --- 3.2 Tracking Domain Patterns (Optimized Regex for DNS) ---
+/^(?:[a-z0-9-]+\.)*(?:track(?:er|ing)?|analytics?|telemetry|pixel(?:s)?|beacons?|metrics?)\.[a-z.]{2,}$/$domain
+/^(?:[a-z0-9-]+\.)*(?:crashlytics|behavior|data-collect)\.[a-z.]{2,}$/$domain
+/^(?:[a-z0-9-]+\.)*(?:fingerprint|device-id)\.[a-z.]{2,}$/$domain
+
+! =============================================================================
+! ⛏️ 4. CRYPTOCURRENCY MINING & ABUSE
+! Blocks in-browser mining and related resource-abuse domains.
+! =============================================================================
+||authedmine.com^
+||browsermine.com^
+||coin-hive.com^
+||coinhive.com^
+||coinlab.biz^
+||crypto-loot.com^
+||cryptoloot.pro^
+||deepminer.org^
+||freecontent.date^
+||hashvault.pro^
+||jsecoin.com^
+||minero.cc^
+||moneroocean.stream^
+||monerominer.rocks^
+||redshell.io^
+||webmine.pro^
+||webminepool.com^
+
+! =============================================================================
+! ⚠️ 5. SCAM & FRAUD BLOCKING
+! Blocks known scam, phishing, and giveaway fraud domains.
+! =============================================================================
+! --- 5.1 Known Scam & Fraud Domains ---
+||claim-reward.net^
+||free-money.site^
+||fraudguard.io^
+||malwaredomainlist.com^
+||phishingdatabase.com^
+||phishtank.com^
+||scam-site-checker.com^
+||scamalert.io^
+||scamadviser.com^
+||scamadvisor.com^
+||scamwatch.com^
+||urlvoid.com^
+||verify-your-account.com^
+||virusdesk.com^
+
+! --- 5.2 Scam Domain Patterns (Optimized Regex for DNS - Use with Caution) ---
+/^(?:[a-z0-9-]+\.)*(?:crypto|bitcoin|ether|nft|scam|phish)[_-](?:gift|promo|airdrop)\.[a-z.]{2,}$/$domain
+/^(?:[a-z0-9-]+\.)*(?:free|get|claim|reward|prize|winner|youve-won)\.[a-z.]{2,}$/$domain
+/^(?:[a-z0-9-]+\.)*(?:d[ilsc]{2,}rds?-?(?:g[il]ft|n[il]tro)|gifts?-?discord)\.[a-z.]{2,}$/$domain
+
+! =============================================================================
+! 🦠 6. MALWARE & PHISHING PROTECTION
+! Blocks malicious domains, fake-updates, and ransomware alerts.
+! =============================================================================
+! --- 6.1 Known Malware & Phishing Domains ---
+||bit.ly.malware-site.net^
+||browser-update.info^
+||download-software.net^
+||fakeupdate.net^
+||flash-player-update.com^
+||fraudulent.com^
+||install-app.net^
+||mackeeper.com^
+||malicious.com^
+||malware-check.online^
+||ransom-payment.xyz^
+||security-breach-alert.com^
+||system-check-required.info^
+||tinyurl.is^
+||update-flash.com^
+||virus-detector.site^
+||windows-defender-alert.com^
+||your-computer-is-infected.com^
+
+! --- 6.2 Malware & Phishing Domain Patterns (Optimized Regex for DNS) ---
+/^(?:[a-z0-9-]+\.)*(?:malware|spyware|ransomware|virus|trojan|worm)\.[a-z.]{2,}$/$domain
+/^(?:[a-z0-9-]+\.)*(?:scan|clean|remove|detect|protect|security)-(?:virus|malware|spyware)\.[a-z.]{2,}$/$domain
+
+! =============================================================================
+! ⚙️ 7. UNWANTED SERVICES & TELEMETRY
+! Blocks analytics SDKs, push services, and customer chat domains.
+! =============================================================================
+||adjust.com^
+||app-measurement.com^
+||appsflyer.com^
+||branch.io^
+||braze.com^
+||buffpanel.com^
+||bugsnag.com^
+||firebase.com^
+||firebaseio.com^
+||flurry.com^
+||freshchat.com^
+||intercom.io^
+||kochava.com^
+||leanplum.com^
+||onesignal.com^
+||pushwoosh.com^
+||salesforceliveagent.com^
+||sessioncam.com^
+||sitescout.com^ ! From MyDNSList regex
+||smartlook.com^
+||userreplay.com^
+||urbanairship.com^
+||zendesk.com^
+! Regex for Unwanted Service Domains
+/^(?:[a-z0-9-]+\.)*(?:survey(?:link)?|stats?)\.[a-z.]{2,}$/$domain
+/^(?:[a-z0-9-]+\.)*(?:clicktale|mouseflow)\.[a-z.]{2,}$/$domain ! UserDNSList covers sessioncam, smartlook, userreplay as static.
