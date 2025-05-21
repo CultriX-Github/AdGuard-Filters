@@ -1,7 +1,7 @@
 ! =============================================================================
 ! Title: Combined Optimal AdGuard DNS Filter List
 ! Description: A highly optimized list for AdGuard DNS, merging the best of multiple refined sources.
-! Version: v1.0.0 (iteration=1)
+! Version: v1.1.0 (iteration=2)
 ! Last Updated: 2025-05-21
 !
 ! HOW TO USE:
@@ -47,10 +47,29 @@
 /^(?:[a-z0-9-]+\.)*adsdk\.[a-z.]{2,}$/$domain
 /^(?:[a-z0-9-]+\.)*adsystem\.[a-z.]{2,}$/$domain
 
+
 ! =============================================================================
 ! 📺 2. PLATFORM-SPECIFIC AD BLOCKING
 ! Targets ads on media platforms and social networks.
 ! =============================================================================
+! --- 2.1 Smart TV & Streaming Platforms ---
+||samsungads.com^
+||lgads.tv^
+||ads-resources-client.vizio.com^
+||advertising.roku.com^
+||telemetry.sdk.roku.com^
+||tvx.adgrx.com^
+
+! --- 2.2 Additional Social Media & Mobile ---
+||ads-bidder-api.twitter.com^
+||advertising-api.pinterest.com^
+||analytics.pinterest.com^
+||log.pinterest.com^
+||log-upload.instagram.com^
+||log-upload.facebook.com^
+||app-measurement.com^
+
+! --- 2.3 Platform-specific Patterns (Optimized Regex for DNS) ---
 /^(?:[a-z0-9-]+\.)*(?:ads?|captive|logs|cloudservices)\.roku\.com$/$domain
 /^(?:[a-z0-9-]+\.)*clicks\.beap\.bc\.yahoo\.com$/$domain
 /^(?:[a-z0-9-]+\.)*google[_.-]?syndicat(?:e|ion)+\.[a-z.]{2,}$/$domain
@@ -62,6 +81,7 @@
 /^(?:[a-z0-9-]+\.)*ads\.tiktok\.com$/$domain
 /^(?:[a-z0-9-]+\.)*ads\.snapchat\.com$/$domain
 /^(?:[a-z0-9-]+\.)*ads-api\.amazon\.com$/$domain
+
 
 ! =============================================================================
 ! 🔍 3. TRACKING & ANALYTICS BLOCKING
@@ -95,10 +115,37 @@
 ||sentry.io^
 ||statcounter.com^
 
+! --- 3.2 Modern Analytics & Tracking Services ---
+||posthog.com^
+||chartbeat.com^
+||permutive.com^
+||contentsquare.com^
+||hotjar.io^
+||tealiumiq.com^
+||clicktale.net^
+||commandersact.com^
+||logrocket.com^
+||inspectlet.com^
+||glassbox.com^
+
 ! --- 3.2 Tracking Domain Patterns (Optimized Regex for DNS) ---
-/^(?:[a-z0-9-]+\.)*(?:track(?:er|ing)?|analytics?|telemetry|pixel(?:s)?|beacons?|metrics?)\.[a-z.]{2,}$/$domain
 /^(?:[a-z0-9-]+\.)*(?:crashlytics|behavior|data-collect)\.[a-z.]{2,}$/$domain
 /^(?:[a-z0-9-]+\.)*(?:fingerprint|device-id)\.[a-z.]{2,}$/$domain
+/^(?:[a-z0-9-]+\.)*(?:track(?:er|ing)?|analytics?|telemetry|pixel(?:s)?|beacons?|metrics?)\.[a-z.]{2,}$/$domain
+
+! Note: Feel free to split the last (third) regex right above this text into smaller pieces.
+! The rules below will deliver very similar results:
+! --- START REPLACEMENT RULES ---
+! ||analytics.*.com^
+! ||telemetry.*.com^
+! ||tracker.*.com^
+! ||tracking.*.com^
+! ||pixels.*.com^
+! |metrics.*.com^
+! /^(?:[a-z0-9-]+\.)*(?:track(?:er|ing)?)\.[a-z.]{2,}$/$domain
+! /^(?:[a-z0-9-]+\.)*(?:analytics?)\.[a-z.]{2,}$/$domain
+! --- END REPLADCEMENT RULES ---
+
 
 ! =============================================================================
 ! ⛏️ 4. CRYPTOCURRENCY MINING & ABUSE
@@ -121,6 +168,7 @@
 ||redshell.io^
 ||webmine.pro^
 ||webminepool.com^
+
 
 ! =============================================================================
 ! ⚠️ 5. SCAM & FRAUD BLOCKING
@@ -146,6 +194,7 @@
 /^(?:[a-z0-9-]+\.)*(?:crypto|bitcoin|ether|nft|scam|phish)[_-](?:gift|promo|airdrop)\.[a-z.]{2,}$/$domain
 /^(?:[a-z0-9-]+\.)*(?:free|get|claim|reward|prize|winner|youve-won)\.[a-z.]{2,}$/$domain
 /^(?:[a-z0-9-]+\.)*(?:d[ilsc]{2,}rds?-?(?:g[il]ft|n[il]tro)|gifts?-?discord)\.[a-z.]{2,}$/$domain
+
 
 ! =============================================================================
 ! 🦠 6. MALWARE & PHISHING PROTECTION
@@ -175,10 +224,12 @@
 /^(?:[a-z0-9-]+\.)*(?:malware|spyware|ransomware|virus|trojan|worm)\.[a-z.]{2,}$/$domain
 /^(?:[a-z0-9-]+\.)*(?:scan|clean|remove|detect|protect|security)-(?:virus|malware|spyware)\.[a-z.]{2,}$/$domain
 
+
 ! =============================================================================
 ! ⚙️ 7. UNWANTED SERVICES & TELEMETRY
 ! Blocks analytics SDKs, push services, and customer chat domains.
 ! =============================================================================
+! --- 7.1 Unwanted Servoces & Telemetry Domains ---
 ||adjust.com^
 ||app-measurement.com^
 ||appsflyer.com^
@@ -202,15 +253,46 @@
 ||userreplay.com^
 ||urbanairship.com^
 ||zendesk.com^
-! Regex for Unwanted Service Domains
+
+! --- 7.2 Unwanted Servoces & Telemetry Regex (Optimized Regex for DNS) ---
 /^(?:[a-z0-9-]+\.)*(?:survey(?:link)?|stats?)\.[a-z.]{2,}$/$domain
 /^(?:[a-z0-9-]+\.)*(?:clicktale|mouseflow)\.[a-z.]{2,}$/$domain ! UserDNSList covers sessioncam, smartlook, userreplay as static.
 
+
 ! =============================================================================
-! ✅ 8. ESSENTIAL WHITELIST
+! 🏠 8. IoT DEVICE TRACKING
+! Blocks telemetry from IoT devices and smart home products.
+! =============================================================================
+||gcloudiap.googleapis.com^
+||blink-app-service.lamarzocco.io^
+||stats.govee.com^
+||metrics.apple.com^
+||crashlytics.googleapis.com^
+||iot-analytics.amazon.com^
+||data.alexa.amazon.com^
+||api.smartthings.com^
+||telemetry.philips-hue.com^
+||metrics.nest.com^
+||logs.ecobee.com^
+||analytics.sonos.com^
+
+! =============================================================================
+! 🎥 9. VIDEO CONFERENCING TELEMETRY
+! Blocks analytics and telemetry from video conferencing platforms.
+! =============================================================================
+||analytics.zoom.us^
+||telemetry.teams.microsoft.com^
+||rtc-telemetry.microsoft.com^
+||browser-intake-datadoghq.com^
+||analytics.skype.com^
+||telemetry.webex.com^
+||analytics.bluejeans.com^
+
+! =============================================================================
+! ✅ 10. ESSENTIAL WHITELIST
 ! Prevents blocking of critical services, CDNs, OS connectivity, and time servers.
 ! =============================================================================
-! --- 8.1 Core Services & Infrastructure ---
+! ---10.1 Core Services & Infrastructure ---
 @@||accounts.google.com^$important
 @@||adaway.org^$important
 @@||ajax.googleapis.com^$important
@@ -258,16 +340,8 @@
 @@||wikimedia.org^$important
 @@||wikipedia.org^$important
 @@||ytimg.com^$important
-! Essential Regex Whitelists
-@@/^(?:[a-z0-9-]+\.)*(?:spotify|reddit(?:media)?|sci-hub|mega|soundcloud)\.(?:com|nl|io|tw|se|do)/$domain,$important
-@@/^clients[0-9]*\.google\.(?:com|[a-z.]{2,})/$domain,$important
-@@/^(?:cdn|api|login|accounts)\.(?:github|gitlab)\.(?:com|io)/$domain,$important ! Supplements github.com, gitlab.com above
-@@/^oauth\..*\.com$/$domain,$important
-@@/^auth\..*\.com$/$domain,$important
-@@/^identity\..*\.com$/$domain,$important
-@@/^sso\..*\.com$/$domain,$important
 
-! --- 8.2 OS Connectivity & Time Servers ---
+! --- 10.2 OS Connectivity & Time Servers ---
 @@||connectivitycheck.android.com^$important
 @@||connectivitycheck.gstatic.com^$important
 @@||captive.apple.com^$important
@@ -281,15 +355,39 @@
 @@||time.google.com^$important
 @@||time.windows.com^$important
 
+! --- 10.3 Additional Essential Services & CDNs ---
+@@||cdn.optimizely.com^$important
+@@||auth0.com^$important
+@@||okta.com^$important
+@@||akamaized.net^$important
+@@||fastly.net^$important
+@@||akamai.net^$important
+@@||polyfill.io^$important
+@@||gstatic.com^$important
+@@||content.googleapis.com^$important
+@@||identity.netlify.com^$important
+@@||recaptcha.net^$important
+@@||hcaptcha.com^$important
+
+! --- 10.4 Essential Whitelist Regex (Optimized Regex for DNS) ---
+@@/^(?:[a-z0-9-]+\.)*(?:spotify|reddit(?:media)?|sci-hub|mega|soundcloud)\.(?:com|nl|io|tw|se|do)/$domain,$important
+@@/^clients[0-9]*\.google\.(?:com|[a-z.]{2,})/$domain,$important
+@@/^(?:cdn|api|login|accounts)\.(?:github|gitlab)\.(?:com|io)/$domain,$important ! Supplements github.com, gitlab.com above
+@@/^oauth\..*\.com$/$domain,$important
+@@/^auth\..*\.com$/$domain,$important
+@@/^identity\..*\.com$/$domain,$important
+@@/^sso\..*\.com$/$domain,$important
+
+
 ! =============================================================================
-! ➕ 9. OPTIONAL WHITELISTS 
+! ➕ 11. OPTIONAL WHITELISTS 
 ! - Uncomment = Enable Whitelist --> Query is unblocked/allowed
 ! - Comment = Disable Whitelist --> Query is blocked
 ! 
 ! Uncomment/Comment rules as needed for utilities, gaming, torrents, adult content
 ! based on personal preference.
 ! =============================================================================
-! --- 9.1 Utility Services ---
+! --- 11.1 Utility Services ---
 @@/^ipv(?:4|6)\.icanhazip\.com$/$domain,$important
 @@||ipinfo.io^$important
 @@||api.ipify.org^$important
@@ -298,7 +396,7 @@
 @@||wtfismyip.com^$important
 @@||icanhazip.com^$important
 
-! --- 9.2 Gaming Platforms ---
+! --- 11.2 Gaming Platforms ---
 @@||steamcommunity.com^$important
 @@||steampowered.com^$important
 @@||steamcdn-a.akamaihd.net^$important
@@ -315,7 +413,7 @@
 @@||nvidia.com^$important
 @@||amd.com^$important
 
-! --- 9.3 Torrent Trackers ---
+! --- 11.3 Torrent Trackers ---
 @@||1337x.to^$important
 @@||explodie.org^$important
 @@||iptorrents.com^$important
@@ -338,11 +436,12 @@
 @@||tracker2.itzmx.com^$important
 @@||yts.mx^$important
 
-! --- 9.4 Adult Entertainment (NSFW) ---
+! --- 11.4 Adult Entertainment (NSFW) Whitelist Regex ---
 @@/^(?:[a-z0-9-]+\.)*(?:pornhub|xnxx|xvideos|xhamster|youporn)\.(?:com|nl|io|tw|se|do)$/$domain,$important
 
+
 ! =============================================================================
-! 📝 10. NOTES ON ADGUARD DNS FILTERING
+! 📝 12. NOTES ON ADGUARD DNS FILTERING
 ! =============================================================================
 ! 1. This list is specifically optimized for AdGuard DNS. It uses only domain-based
 !    rules and domain-specific regular expressions.
@@ -357,4 +456,20 @@
 !    checking its source or re-generating if based on evolving inputs.
 ! 6. For blocking specific elements on a page, trackers by full path, or URL
 !    parameters, complement DNS filtering with a browser-based ad blocker.
+! =============================================================================
+
+
+! =============================================================================
+! 📌 13. INDUSTRY BEST PRACTICES & NOTES
+! Important considerations for maintaining filter quality.
+! =============================================================================
+! 1) Regularly update filters from trusted sources (EasyList, EasyPrivacy, etc.).
+! 2) Use anchored regex to avoid partial matches.
+! 3) Keep whitelists minimal to avoid bypassing protections.
+! 4) Monitor logs for false positives and refine patterns as needed.
+! 5) Segment filters into aggressive and moderate lists if necessary.
+! 6) Use "$important" only when absolutely necessary to override other rules.
+! 7) Reassess domain blocks periodically to avoid false positives.
+! 8) Prioritize specific rules over broad regex patterns for accuracy.
+! 9) Consider using user scripts for more complex filtering logic.
 ! =============================================================================
