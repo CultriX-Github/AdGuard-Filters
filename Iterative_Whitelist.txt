@@ -1,8 +1,8 @@
 ! =============================================================================
-! ✅ 8. ESSENTIAL WHITELIST
+! ✅ 10. ESSENTIAL WHITELIST
 ! Prevents blocking of critical services, CDNs, OS connectivity, and time servers.
 ! =============================================================================
-! --- 8.1 Core Services & Infrastructure ---
+! ---10.1 Core Services & Infrastructure ---
 @@||accounts.google.com^$important
 @@||adaway.org^$important
 @@||ajax.googleapis.com^$important
@@ -50,16 +50,8 @@
 @@||wikimedia.org^$important
 @@||wikipedia.org^$important
 @@||ytimg.com^$important
-! Essential Regex Whitelists
-@@/^(?:[a-z0-9-]+\.)*(?:spotify|reddit(?:media)?|sci-hub|mega|soundcloud)\.(?:com|nl|io|tw|se|do)/$domain,$important
-@@/^clients[0-9]*\.google\.(?:com|[a-z.]{2,})/$domain,$important
-@@/^(?:cdn|api|login|accounts)\.(?:github|gitlab)\.(?:com|io)/$domain,$important ! Supplements github.com, gitlab.com above
-@@/^oauth\..*\.com$/$domain,$important
-@@/^auth\..*\.com$/$domain,$important
-@@/^identity\..*\.com$/$domain,$important
-@@/^sso\..*\.com$/$domain,$important
 
-! --- 8.2 OS Connectivity & Time Servers ---
+! --- 10.2 OS Connectivity & Time Servers ---
 @@||connectivitycheck.android.com^$important
 @@||connectivitycheck.gstatic.com^$important
 @@||captive.apple.com^$important
@@ -73,15 +65,39 @@
 @@||time.google.com^$important
 @@||time.windows.com^$important
 
+! --- 10.3 Additional Essential Services & CDNs ---
+@@||cdn.optimizely.com^$important
+@@||auth0.com^$important
+@@||okta.com^$important
+@@||akamaized.net^$important
+@@||fastly.net^$important
+@@||akamai.net^$important
+@@||polyfill.io^$important
+@@||gstatic.com^$important
+@@||content.googleapis.com^$important
+@@||identity.netlify.com^$important
+@@||recaptcha.net^$important
+@@||hcaptcha.com^$important
+
+! --- 10.4 Essential Whitelist Regex (Optimized Regex for DNS) ---
+@@/^(?:[a-z0-9-]+\.)*(?:spotify|reddit(?:media)?|sci-hub|mega|soundcloud)\.(?:com|nl|io|tw|se|do)/$domain,$important
+@@/^clients[0-9]*\.google\.(?:com|[a-z.]{2,})/$domain,$important
+@@/^(?:cdn|api|login|accounts)\.(?:github|gitlab)\.(?:com|io)/$domain,$important ! Supplements github.com, gitlab.com above
+@@/^oauth\..*\.com$/$domain,$important
+@@/^auth\..*\.com$/$domain,$important
+@@/^identity\..*\.com$/$domain,$important
+@@/^sso\..*\.com$/$domain,$important
+
+
 ! =============================================================================
-! ➕ 9. OPTIONAL WHITELISTS 
+! ➕ 11. OPTIONAL WHITELISTS 
 ! - Uncomment = Enable Whitelist --> Query is unblocked/allowed
 ! - Comment = Disable Whitelist --> Query is blocked
 ! 
 ! Uncomment/Comment rules as needed for utilities, gaming, torrents, adult content
 ! based on personal preference.
 ! =============================================================================
-! --- 9.1 Utility Services ---
+! --- 11.1 Utility Services ---
 @@/^ipv(?:4|6)\.icanhazip\.com$/$domain,$important
 @@||ipinfo.io^$important
 @@||api.ipify.org^$important
@@ -90,7 +106,7 @@
 @@||wtfismyip.com^$important
 @@||icanhazip.com^$important
 
-! --- 9.2 Gaming Platforms ---
+! --- 11.2 Gaming Platforms ---
 @@||steamcommunity.com^$important
 @@||steampowered.com^$important
 @@||steamcdn-a.akamaihd.net^$important
@@ -107,7 +123,7 @@
 @@||nvidia.com^$important
 @@||amd.com^$important
 
-! --- 9.3 Torrent Trackers ---
+! --- 11.3 Torrent Trackers ---
 @@||1337x.to^$important
 @@||explodie.org^$important
 @@||iptorrents.com^$important
@@ -130,23 +146,5 @@
 @@||tracker2.itzmx.com^$important
 @@||yts.mx^$important
 
-! --- 9.4 Adult Entertainment (NSFW) ---
+! --- 11.4 Adult Entertainment (NSFW) Whitelist Regex ---
 @@/^(?:[a-z0-9-]+\.)*(?:pornhub|xnxx|xvideos|xhamster|youporn)\.(?:com|nl|io|tw|se|do)$/$domain,$important
-
-! =============================================================================
-! 📝 10. NOTES ON ADGUARD DNS FILTERING
-! =============================================================================
-! 1. This list is specifically optimized for AdGuard DNS. It uses only domain-based
-!    rules and domain-specific regular expressions.
-! 2. Rules unsupported by DNS-level filtering (cosmetic, path/parameter-specific,
-!    most scriptlets, and client-side modifiers) have been excluded.
-! 3. Regular expressions are used for broader pattern matching but are chosen for
-!    efficiency at the DNS level.
-! 4. If a legitimate website or service is inadvertently blocked (false positive),
-!    please identify the responsible rule. You can then whitelist the specific
-!    domain or report the issue for list refinement.
-! 5. The ad and tracking landscape evolves rapidly. Keep this list updated by
-!    checking its source or re-generating if based on evolving inputs.
-! 6. For blocking specific elements on a page, trackers by full path, or URL
-!    parameters, complement DNS filtering with a browser-based ad blocker.
-! =============================================================================
