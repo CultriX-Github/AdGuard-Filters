@@ -1,0 +1,335 @@
+#!/usr/bin/env python3
+"""
+AdGuard Blocklist Generator - V0.1.0
+
+Transform your blocklists from the hosts format into AdGuard (Regex) rules.
+
+Run with: 
+python ./ag_regex_gen.py <blocklist_in_host_format> <output_in_adguard_format> --min-cluster-size <min_cluster_size=25> --subdomain-threshold <subdomain-threshold, default=5> --verbose --parallel
+
+Features:
+ 1. Parent-domain generalization with PUBLIC_SUFFIX_WHITELIST
+ 2. Heuristic random-segment rule generation
+ 3. Hyper-optimized regex bundling via build_regex_from_group()
+ 4. Default “all-in” phases with opt-out flags:
+    --no-generalization, --no-heuristics
+"""
+import sys
+import re
+import os
+import logging
+import argparse
+from pathlib import Path
+from collections import defaultdict
+import concurrent.futures
+
+# Optional public-suffix extractor
+try:
+    import tldextract
+except ImportError:
+    tldextract = None
+
+# --- Configuration & Whitelists ---
+MIN_STRINGS_FOR_CHAR_CLASS  = 5
+DEFAULT_CLUSTER_SIZE        = 25
+DEFAULT_SUBDOMAIN_THRESHOLD = 5
+DEFAULT_MAX_RULE_LEN        = 1500
+
+PUBLIC_SUFFIX_WHITELIST = {
+    'github.io', 'blogspot.com', 'wordpress.com', 'wixsite.com', 'weebly.com',
+    's3.amazonaws.com', 'cloudfront.net', 'appspot.com', 'firebaseapp.com',
+    'netlify.app', 'vercel.app', 'azurewebsites.net', 'herokuapp.com',
+    'duckdns.org', 'no-ip.com', 'dyndns.org',
+    'co.uk', 'com.au', 'co.jp', 'com.br', 'com.cn', 'co.za', 'com.mx', 'com.ru', 'com.de'
+}
+
+# Setup logger
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler(sys.stderr)
+handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
+
+
+def validate_domain(domain: str) -> bool:
+    """IDNA-encode + ASCII-TLD regex validation."""
+    try:
+        a = domain.encode('idna').decode('ascii')
+    except Exception:
+        return False
+    if len(a) > 253:
+        return False
+    return bool(re.match(
+        r'^(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,}$',
+        a
+    ))
+
+
+def load_domains(path: Path) -> set[str]:
+    """Read blocklist, return unique valid domains."""
+    if not path.exists():
+        logger.error(f"Input file not found: {path}")
+        sys.exit(1)
+    doms = set()
+    for line in path.read_text(encoding='utf-8', errors='ignore').splitlines():
+        t = line.strip().lower()
+        if not t or t.startswith('#'):
+            continue
+        cand = t.split()[-1]
+        if validate_domain(cand):
+            doms.add(cand)
+    return doms
+
+
+def grouping_key(domain: str) -> str:
+    """
+    Multi-stage grouping:
+      1) Any label ≥15 chars
+      2) Any label >8 chars containing digit
+      3) Numeric subdomain (if leftmost label has digits)
+      4) Else second-level domain (SLD) via tldextract or split
+    """
+    parts = domain.split('.')
+    # 1) extremely long label
+    for p in parts:
+        if len(p) >= 15:
+            return p
+    # 2) random-like label
+    for p in parts:
+        if len(p) > 8 and any(c.isdigit() for c in p):
+            return p
+    # 3) numeric subdomain
+    if tldextract:
+        ext = tldextract.extract(domain)
+        if ext.subdomain and any(c.isdigit() for c in ext.subdomain):
+            return ext.subdomain
+        return ext.domain
+    # fallback split
+    if len(parts) > 2 and any(c.isdigit() for c in parts[0]):
+        return parts[0]
+    return parts[-2] if len(parts) >= 2 else domain
+
+
+def generalize_subdomains(domains: set[str], threshold: int) -> tuple[list[str], set[str]]:
+    """
+    Use PUBLIC_SUFFIX_WHITELIST to decide 2- vs 3-label parent.
+    Emit ||parent^ if ≥ threshold subdomains, remove them.
+    """
+    pm = defaultdict(set)
+    for d in domains:
+        parts = d.split('.')
+        if len(parts) > 2:
+            two = '.'.join(parts[-2:])
+            if two in PUBLIC_SUFFIX_WHITELIST and len(parts) >= 3:
+                parent = '.'.join(parts[-3:])
+            else:
+                parent = two
+        else:
+            parent = d
+        if parent not in PUBLIC_SUFFIX_WHITELIST:
+            pm[parent].add(d)
+
+    gen_rules = []
+    remaining = set(domains)
+    for parent, subs in pm.items():
+        if len(subs) >= threshold:
+            gen_rules.append(f"! Generalize {parent}\n||{re.escape(parent)}^")
+            remaining -= subs
+    return gen_rules, remaining
+
+
+def generate_multiple_heuristic_rules(domains: set[str], min_cluster_size: int) -> list[str]:
+    """
+    Cluster on any >7-char label with digits:
+      - If identical across cluster → ||label.*^
+      - Else char-class + grouped suffix regex
+    """
+    cmap = defaultdict(list)
+    for d in domains:
+        parts = d.split('.')
+        for idx, part in enumerate(parts):
+            if len(part) > 7 and any(c.isdigit() for c in part):
+                prefix = tuple(parts[:idx])
+                suffix = tuple(parts[idx+1:])
+                sig = ''.join(sorted(set(part)))
+                cmap[(prefix, len(part), sig)].append((part, suffix))
+
+    heur = []
+    for (prefix, length, sig), entries in cmap.items():
+        if len(entries) < min_cluster_size:
+            continue
+        labels = {lbl for lbl, _ in entries}
+        # literal shortcut
+        if len(labels) == 1:
+            lit = labels.pop()
+            heur.append(
+                f"! Heuristic literal: {'.'.join(prefix) or '<root>'}.{lit}.*\n"
+                rf"||{re.escape(lit)}.*^"
+            )
+            continue
+        # fallback pattern
+        char_class = f"[{sig}]"
+        rnd = rf"{char_class}{{{length}}}"
+        pre = (r'\.'.join(re.escape(p) for p in prefix) + r'\.') if prefix else ''
+        suffixes = {
+            '' if not suf else r'\.' + r'\.'.join(re.escape(x) for x in suf)
+            for _, suf in entries
+        }
+        if len(suffixes) == 1:
+            suf_rx = suffixes.pop()
+        else:
+            suf_rx = rf"(?:{'|'.join(sorted(suffixes))})"
+        heur.append(
+            f"! Heuristic cluster: {'.'.join(prefix) or '<root>'}.<rand>.…\n"
+            rf"||{pre}{rnd}{suf_rx}^"
+        )
+    return heur
+
+
+# --- Advanced regex builder from v14 Final ---
+
+def optimize_with_char_classes(strings: list[str]) -> str:
+    by_len = defaultdict(list)
+    for s in strings:
+        by_len[len(s)].append(s)
+    pats = []
+    for length, lst in by_len.items():
+        if len(lst) < MIN_STRINGS_FOR_CHAR_CLASS:
+            pats.append('|'.join(re.escape(s) for s in lst))
+            continue
+        slots = [set() for _ in range(length)]
+        for s in lst:
+            for i, ch in enumerate(s):
+                slots[i].add(ch)
+        pats.append(
+            ''.join(
+                f"[{''.join(sorted(chs))}]" if len(chs)>1 else re.escape(next(iter(chs)))
+                for chs in slots
+            )
+        )
+    return '|'.join(pats)
+
+
+def optimize_varying_parts(parts: list[str]) -> str:
+    tld_groups = defaultdict(list)
+    lone = []
+    for part in parts:
+        if '.' in part:
+            sub, tld = part.rsplit('.', 1)
+            tld_groups[tld].append(sub)
+        else:
+            lone.append(re.escape(part))
+    chunks = []
+    for tld, subs in tld_groups.items():
+        compact = optimize_with_char_classes(subs)
+        chunks.append(rf"({compact})\.{re.escape(tld)}")
+    return '|'.join(sorted(chunks) + sorted(lone))
+
+
+def build_regex_from_group(group: list[str]) -> str:
+    if not group:
+        return ""
+    if len(group) == 1:
+        return re.escape(group[0])
+    # find prefix
+    prefix = os.path.commonprefix(group)
+    if prefix and prefix[-1] != '.':
+        idx = prefix.rfind('.')
+        prefix = prefix[:idx] if idx != -1 else ""
+    prefix = prefix.rstrip('.')
+    if len(prefix) < 5:
+        return optimize_varying_parts(group)
+    if all(d.startswith(prefix + '.') for d in group):
+        tails = [d[len(prefix)+1:] for d in group]
+        return rf"{re.escape(prefix)}\.({optimize_varying_parts(tails)})"
+    return optimize_varying_parts(group)
+
+
+def generate_standard(domains: set[str],
+                      max_len: int,
+                      parallel: bool=False
+                     ) -> tuple[list[str], list[str]]:
+    """
+    Bundle domains into URL‐regex rules ≤ max_len, plus simple ||domain^ rules.
+    """
+    groups = defaultdict(list)
+    for d in domains:
+        groups[grouping_key(d)].append(d)
+
+    multi = [sorted(v) for v in groups.values() if len(v) > 1]
+    singles = sorted(d for v in groups.values() if len(v) == 1 for d in v)
+    multi.sort(key=len, reverse=True)
+
+    if parallel:
+        workers = os.cpu_count() or 1
+        with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as ex:
+            pats = list(ex.map(build_regex_from_group, multi))
+    else:
+        pats = [build_regex_from_group(m) for m in multi]
+
+    regex_rules = []
+    parts, curr = [], 0
+    for pat in pats:
+        if not pat:
+            continue
+        if parts and curr + len(pat) + 1 > max_len:
+            regex_rules.append(rf"/^https?://(?:[\w\-]+\.)?(?:{'|'.join(parts)})/i")
+            parts, curr = [], 0
+        parts.append(pat)
+        curr += len(pat) + 1
+    if parts:
+        regex_rules.append(rf"/^https?://(?:[\w\-]+\.)?(?:{'|'.join(parts)})/i")
+
+    simple = [f"||{d}^" for d in singles]
+    return regex_rules, simple
+
+
+def main():
+    p = argparse.ArgumentParser(description="AdGuard Blocklist Generator v14.7")
+    p.add_argument('input_file',  type=Path, help='Blocklist file')
+    p.add_argument('output_file', type=Path, nargs='?', help='Output rules file')
+    p.add_argument('--no-generalization', action='store_true',
+                   help='Skip parent-domain generalization')
+    p.add_argument('--no-heuristics',       action='store_true',
+                   help='Skip heuristic rule generation')
+    p.add_argument('--min-cluster-size',    type=int, default=DEFAULT_CLUSTER_SIZE)
+    p.add_argument('--subdomain-threshold', type=int, default=DEFAULT_SUBDOMAIN_THRESHOLD)
+    p.add_argument('--max-len',             type=int, default=DEFAULT_MAX_RULE_LEN)
+    p.add_argument('--parallel',            action='store_true')
+    p.add_argument('-v', '--verbose',       action='store_true')
+    args = p.parse_args()
+
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
+
+    doms = load_domains(args.input_file)
+    logger.info(f"Loaded {len(doms)} domains")
+
+    rules = []
+
+    # 1) Generalization
+    if not args.no_generalization:
+        gens, doms = generalize_subdomains(doms, args.subdomain_threshold)
+        rules.extend(gens)
+        logger.info(f"Generalized {len(gens)} parents, {len(doms)} remain")
+
+    # 2) Heuristics
+    if not args.no_heuristics:
+        heur = generate_multiple_heuristic_rules(doms, args.min_cluster_size)
+        rules.extend(heur)
+        logger.info(f"Generated {len(heur)} heuristic rules")
+
+    # 3) Regex bundling
+    rx, simp = generate_standard(doms, args.max_len, args.parallel)
+    rules.extend(rx)
+    rules.extend(simp)
+    logger.info(f"Compressed into {len(rx)} regex + {len(simp)} simple rules")
+
+    # Write out
+    out = args.output_file or args.input_file.with_suffix('.adguard.txt')
+    Path(out).write_text("\n".join(rules), encoding='utf-8')
+    logger.info(f"Wrote {len(rules)} rules to {out}")
+
+
+if __name__ == '__main__':
+    main()
