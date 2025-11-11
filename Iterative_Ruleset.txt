@@ -1,27 +1,52 @@
 ! =============================================================================
-! Title: Combined Optimal AdGuard DNS Filter List
-! Description: A highly optimized list for AdGuard DNS, merging the best of multiple refined sources.
-! Version: v1.1.0 (iteration=2)
-! Last Updated: 2025-05-21
+! Title: Combined Optimal AdGuard DNS Filter (Improved)
+! Description: DNS-only rules for AdGuard DNS. Safe defaults + practical allows.
+! Version: v1.2.0
+! Last Updated: 2025-11-11
 !
-! HOW TO USE:
-!    • Add this file to your AdGuard DNS custom filtering rules.
-!    • This list contains only domain-based rules (e.g., ||example.com^)
-!      and domain-specific regular expressions (e.g., /^ads\./$domain)
-!      that are effective at the DNS level.
-!    • Path-based rules, URL parameter rules, cosmetic rules, and most
-!      client-side modifiers have been excluded as they are not supported by DNS filtering.
+! CHANGELOG (v1.4.1):
+! • Added PKI staple for older Let's Encrypt chains.
+! • Added performance note for broad tracking regex.
+! • Fixed typo in Section 14 divider.
+!
+! HOW THIS LIST IS DESIGNED
+! • DNS context only (no cosmetic rules, no path/param matching).
+! • Specific domains first (fast, predictable) → regex patterns (carefully scoped).
+! • Allow rules:
+!  	  – Plain @@ rules keep $important (higher priority).
+!  	  – Regex @@ rules omit modifiers for stability.
+! • “AGGRESSIVE” blocks and “OPTIONAL” allows are off by default — enable consciously.
+!
+! DEBUGGING PLAYBOOK (quick)
+! 1) In AdGuard logs filter by “Blocked by custom filtering rules”.
+! 2) If breakage is from a regex, allowlist the exact domain with @@||domain.tld^
+! 3) Prefer adding per-site @@ over deleting a global block rule.
+! 4) If TLS/SSO fails sporadically, check OCSP/PKI allows below.
+!
+! TUNING PLAYBOOK (personalize your list)
+! 1) Find New Blocks: Check your "Allowed" query log for tracker-like domains 
+!    (e.g., telemetry.app-you-use.com) and add them to the blocklist.
+! 2) Find False Positives: Check your "Blocked" log for legitimate services 
+!    that are broken. Add them to "Section 14: QUICK UNBREAK EXAMPLES"
+!    (e.g., @@||service.that-broke.com^).
+!
+! REGEX NOTES (important)
+! • All regexes match the FULL hostname (we anchor with ^ and $).
+! • End-of-domain class uses [a-z.]{2,} to tolerate multi-label TLDs (e.g., co.uk).
+! • Keep regex count modest: they evaluate on each query. Favor plain domains where possible.
 ! =============================================================================
+
 
 ! =============================================================================
 ! 🛑 1. CORE AD BLOCKING
-! Blocks major ad networks and generic ad-serving domains/patterns.
+! Purpose: high-signal ad networks; minimal false positives.
 ! =============================================================================
+
 ! --- 1.1 Major Ad Networks (Specific Domains) ---
 ||aaxads.com^
+||adnxs.com^
 ||adservice.google.com^
 ||advertising.com^
-||adnxs.com^
 ||amazon-adsystem.com^
 ||ads.yahoo.com^
 ||adsrvr.org^
@@ -37,60 +62,62 @@
 ||rubiconproject.com^
 ||taboola.com^
 
-! --- 1.2 Ad Domain Patterns (Optimized Regex for DNS) ---
-/^(?:[a-z0-9-]+\.)*(?:ad(?:s?[xv]?|serv(?:er|ice)?s?)|advert(?:is(?:e|ing)|ements?)|banners?)\.[a-z.]{2,}$/$domain
-! Additional specific patterns if they offer unique coverage not fully optimized by the broad regex above:
-/^(?:[a-z0-9-]+\.)*flashtalking\.[a-z.]{2,}$/$domain
-/^(?:[a-z0-9-]+\.)*yieldmanager\.[a-z.]{2,}$/$domain
-/^(?:[a-z0-9-]+\.)*adchoice\.[a-z.]{2,}$/$domain
-/^(?:[a-z0-9-]+\.)*aff(?:iliat(?:es|ion))?\.[a-z.]{2,}$/$domain
-/^(?:[a-z0-9-]+\.)*adsdk\.[a-z.]{2,}$/$domain
-/^(?:[a-z0-9-]+\.)*adsystem\.[a-z.]{2,}$/$domain
+! --- 1.2 Ad Domain Patterns (DNS-safe regex)
+! Matches hostnames whose registrable part is ad/advert/…; avoids path/param.
+/^(?:[a-z0-9-]+\.)*(?:ad(?:s?[xv]?|serv(?:er|ice)?s?)|advert(?:is(?:e|ing)|ements?)|banners?)\.[a-z.]{2,}$/
+
+! Targeted extras (incremental coverage; still anchored to full hostname)
+! Legacy, still seen in the wild:
+/^(?:[a-z0-9-]+\.)*adchoice\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*adsdk\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*adsystem\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*aff(?:iliat(?:es|ion))?\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*flashtalking\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*yieldmanager\.[a-z.]{2,}$/
 
 
 ! =============================================================================
 ! 📺 2. PLATFORM-SPECIFIC AD BLOCKING
-! Targets ads on media platforms and social networks.
+! Notes: These are common for TVs/streamers & social SDKs. Some devices degrade ads stats but continue to function.
 ! =============================================================================
-! --- 2.1 Smart TV & Streaming Platforms ---
-||samsungads.com^
-||lgads.tv^
+
+! Specific domains (sorted)
+||ads-bidder-api.twitter.com^
 ||ads-resources-client.vizio.com^
+||advertising-api.pinterest.com^
 ||advertising.roku.com^
+||analytics.pinterest.com^
+||app-measurement.com^
+||lgads.tv^
+||log-upload.facebook.com^
+||log-upload.instagram.com^
+||log.pinterest.com^
+||samsungads.com^
 ||telemetry.sdk.roku.com^
 ||tvx.adgrx.com^
 
-! --- 2.2 Additional Social Media & Mobile ---
-||ads-bidder-api.twitter.com^
-||advertising-api.pinterest.com^
-||analytics.pinterest.com^
-||log.pinterest.com^
-||log-upload.instagram.com^
-||log-upload.facebook.com^
-||app-measurement.com^
-
-! --- 2.3 Platform-specific Patterns (Optimized Regex for DNS) ---
-/^(?:[a-z0-9-]+\.)*(?:ads?|captive|logs|cloudservices)\.roku\.com$/$domain
-/^(?:[a-z0-9-]+\.)*clicks\.beap\.bc\.yahoo\.com$/$domain
-/^(?:[a-z0-9-]+\.)*google[_.-]?syndicat(?:e|ion)+\.[a-z.]{2,}$/$domain
-/^(?:[a-z0-9-]+\.)*secure\.footprint\.net$/$domain
-/^(?:[a-z0-9-]+\.)*ads\.facebook\.com$/$domain
-/^(?:[a-z0-9-]+\.)*ads\.twitter\.com$/$domain
-/^(?:[a-z0-9-]+\.)*ads\.linkedin\.com$/$domain
-/^(?:[a-z0-9-]+\.)*ads\.reddit\.com$/$domain
-/^(?:[a-z0-9-]+\.)*ads\.tiktok\.com$/$domain
-/^(?:[a-z0-9-]+\.)*ads\.snapchat\.com$/$domain
-/^(?:[a-z0-9-]+\.)*ads-api\.amazon\.com$/$domain
+! Regex (sorted by target hostname)
+/^(?:[a-z0-9-]+\.)*ads-api\.amazon\.com$/
+/^(?:[a-z0-9-]+\.)*ads\.facebook\.com$/
+/^(?:[a-z0-9-]+\.)*ads\.linkedin\.com$/
+/^(?:[a-z0-9-]+\.)*ads\.reddit\.com$/
+/^(?:[a-z0-9-]+\.)*ads\.snapchat\.com$/
+/^(?:[a-z0-9-]+\.)*ads\.tiktok\.com$/
+/^(?:[a-z0-9-]+\.)*ads\.twitter\.com$/
+/^(?:[a-z0-9-]+\.)*clicks\.beap\.bc\.yahoo\.com$/
+/^(?:[a-z0-9-]+\.)*google[_.-]?syndicat(?:e|ion)+\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:ads?|captive|logs|cloudservices)\.roku\.com$/
+/^(?:[a-z0-9-]+\.)*secure\.footprint\.net$/
 
 
 ! =============================================================================
 ! 🔍 3. TRACKING & ANALYTICS BLOCKING
-! Blocks analytics, tracking pixels, and telemetry domains.
+! Rationale: these are analytics/behavioral tools. Some are privacy-friendly but still trackers.
 ! =============================================================================
-! --- 3.1 Major Analytics & Tracking Services (Specific Domains) ---
-||analytics.google.com^
-||google-analytics.com^
+
+! --- 3.1 Major Analytics & Trackers (sorted) ---
 ||amplitude.com^
+||analytics.google.com^
 ||bluekai.com^
 ||clarity.ms^
 ||cname-tracking.com^
@@ -98,6 +125,7 @@
 ||dynatrace.com^
 ||fathom.com^
 ||fullstory.com^
+||google-analytics.com^
 ||heap.io^
 ||hotjar.com^
 ||kissmetrics.com^
@@ -115,41 +143,40 @@
 ||sentry.io^
 ||statcounter.com^
 
-! --- 3.2 Modern Analytics & Tracking Services ---
-||posthog.com^
+! --- 3.2 Modern Analytics & Tracking (sorted) ---
 ||chartbeat.com^
-||permutive.com^
-||contentsquare.com^
-||hotjar.io^
-||tealiumiq.com^
 ||clicktale.net^
 ||commandersact.com^
-||logrocket.com^
-||inspectlet.com^
+||contentsquare.com^
 ||glassbox.com^
+||hotjar.io^
+||inspectlet.com^
+||logrocket.com^
+||permutive.com^
+||posthog.com^
+||tealiumiq.com^
 
-! --- 3.2 Tracking Domain Patterns (Optimized Regex for DNS) ---
-/^(?:[a-z0-9-]+\.)*(?:crashlytics|behavior|data-collect)\.[a-z.]{2,}$/$domain
-/^(?:[a-z0-9-]+\.)*(?:fingerprint|device-id)\.[a-z.]{2,}$/$domain
-/^(?:[a-z0-9-]+\.)*(?:track(?:er|ing)?|analytics?|telemetry|pixel(?:s)?|beacons?|metrics?)\.[a-z.]{2,}$/$domain
+! --- 3.3 CNAME Cloaked Trackers (Illustrative) ---
+! These are first-party domains that hide third-party trackers.
+! You must find these in your *own* query log, as they are unique to each site.
+! ||an.example-site.com^ ! Example: CNAMEs to tracker.com
+! ||log.another-website.org^ ! Example: CNAMEs to analytics-provider.net
 
-! Note: Feel free to split the last (third) regex right above this text into smaller pieces.
-! The rules below will deliver very similar results:
-! --- START REPLACEMENT RULES ---
-! ||analytics.*.com^
-! ||telemetry.*.com^
-! ||tracker.*.com^
-! ||tracking.*.com^
-! ||pixels.*.com^
-! |metrics.*.com^
-! /^(?:[a-z0-9-]+\.)*(?:track(?:er|ing)?)\.[a-z.]{2,}$/$domain
-! /^(?:[a-z0-9-]+\.)*(?:analytics?)\.[a-z.]{2,}$/$domain
-! --- END REPLADCEMENT RULES ---
+! --- 3.4 Broad Tracking Families (keep anchors; consider perf) ---
+! If you notice DNS eval cost creeping up on weak clients, trial disabling the broad family line:
+/^(?:[a-z0-9-]+\.)*(?:track(?:er|ing)?|analytics?|telemetry|pixel(?:s)?|beacons?|metrics?)\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:crashlytics|behavior|data-collect)\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:fingerprint|device-id)\.[a-z.]{2,}$/
+
+
+! Lighter alternatives (swap in if needed):
+! /^(?:[a-z0-9-]+\.)*(?:track(?:er|ing)?)\.[a-z.]{2,}$/
+! /^(?:[a-z0-9-]+\.)*analytics?\.[a-z.]{2,}$/
+! /^(?:[a-z0-9-]+\.)*telemetry\.[a-z.]{2,}$/
 
 
 ! =============================================================================
 ! ⛏️ 4. CRYPTOCURRENCY MINING & ABUSE
-! Blocks in-browser mining and related resource-abuse domains.
 ! =============================================================================
 ||authedmine.com^
 ||browsermine.com^
@@ -172,44 +199,36 @@
 
 ! =============================================================================
 ! ⚠️ 5. SCAM & FRAUD BLOCKING
-! Blocks known scam, phishing, and giveaway fraud domains.
+! Kept to clearly malicious signals to avoid harming threat intel access.
 ! =============================================================================
-! --- 5.1 Known Scam & Fraud Domains ---
 ||claim-reward.net^
 ||free-money.site^
-||fraudguard.io^
-||malwaredomainlist.com^
-||phishingdatabase.com^
-||phishtank.com^
-||scam-site-checker.com^
-||scamalert.io^
-||scamadviser.com^
-||scamadvisor.com^
-||scamwatch.com^
-||urlvoid.com^
 ||verify-your-account.com^
-||virusdesk.com^
 
-! --- 5.2 Scam Domain Patterns (Optimized Regex for DNS - Use with Caution) ---
-/^(?:[a-z0-9-]+\.)*(?:crypto|bitcoin|ether|nft|scam|phish)[_-](?:gift|promo|airdrop)\.[a-z.]{2,}$/$domain
-/^(?:[a-z0-9-]+\.)*(?:free|get|claim|reward|prize|winner|youve-won)\.[a-z.]{2,}$/$domain
-/^(?:[a-z0-9-]+\.)*(?:d[ilsc]{2,}rds?-?(?:g[il]ft|n[il]tro)|gifts?-?discord)\.[a-z.]{2,}$/$domain
+/^(?:[a-z0-9-]+\.)*(?:crypto|bitcoin|ether|nft|scam|phish)[_-](?:gift|promo|airdrop)\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:d[ilsc]{2,}rds?-?(?:g[il]ft|n[il]tro)|gifts?-?discord)\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:free|get|claim|reward|prize|winner|youve-won)\.[a-z.]{2,}$/
 
 
 ! =============================================================================
 ! 🦠 6. MALWARE & PHISHING PROTECTION
-! Blocks malicious domains, fake-updates, and ransomware alerts.
 ! =============================================================================
-! --- 6.1 Known Malware & Phishing Domains ---
-||bit.ly.malware-site.net^
+
+! --- 6.1 High-Confidence Threat Domains ---
+! This section is for specific, known-malicious domains.
+! It is best populated by a dedicated threat-intel feed (e.g., OISD, Firebog).
+! Examples of what would go here:
+! ||phishing-site-123.xyz^
+! ||malware-c2-server.net^
+! ||ransomware-drop.com^
+
+! --- 6.2 Nuisance & Generic Phishing Domains ---
 ||browser-update.info^
 ||download-software.net^
 ||fakeupdate.net^
 ||flash-player-update.com^
-||fraudulent.com^
 ||install-app.net^
 ||mackeeper.com^
-||malicious.com^
 ||malware-check.online^
 ||ransom-payment.xyz^
 ||security-breach-alert.com^
@@ -220,79 +239,93 @@
 ||windows-defender-alert.com^
 ||your-computer-is-infected.com^
 
-! --- 6.2 Malware & Phishing Domain Patterns (Optimized Regex for DNS) ---
-/^(?:[a-z0-9-]+\.)*(?:malware|spyware|ransomware|virus|trojan|worm)\.[a-z.]{2,}$/$domain
-/^(?:[a-z0-9-]+\.)*(?:scan|clean|remove|detect|protect|security)-(?:virus|malware|spyware)\.[a-z.]{2,}$/$domain
+! --- 6.3 Malware & Phishing Domain Patterns ---
+/^(?:[a-z0-9-]+\.)*(?:malware|spyware|ransomware|virus|trojan|worm)\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:scan|clean|remove|detect|protect|security)-(?:virus|malware|spyware)\.[a-z.]{2,}$/
 
 
 ! =============================================================================
-! ⚙️ 7. UNWANTED SERVICES & TELEMETRY
-! Blocks analytics SDKs, push services, and customer chat domains.
+! ⚙️ 7. UNWANTED SERVICES & TELEMETRY (CONSERVATIVE)
+! May affect push, crash logs, or A/B testing. Allow per app if needed.
 ! =============================================================================
-! --- 7.1 Unwanted Servoces & Telemetry Domains ---
 ||adjust.com^
-||app-measurement.com^
 ||appsflyer.com^
 ||branch.io^
 ||braze.com^
-||buffpanel.com^
 ||bugsnag.com^
 ||firebase.com^
 ||firebaseio.com^
 ||flurry.com^
-||freshchat.com^
-||intercom.io^
 ||kochava.com^
 ||leanplum.com^
 ||onesignal.com^
 ||pushwoosh.com^
-||salesforceliveagent.com^
-||sessioncam.com^
-||sitescout.com^ ! From MyDNSList regex
-||smartlook.com^
-||userreplay.com^
 ||urbanairship.com^
-||zendesk.com^
 
-! --- 7.2 Unwanted Servoces & Telemetry Regex (Optimized Regex for DNS) ---
-/^(?:[a-z0-9-]+\.)*(?:survey(?:link)?|stats?)\.[a-z.]{2,}$/$domain
-/^(?:[a-z0-9-]+\.)*(?:clicktale|mouseflow)\.[a-z.]{2,}$/$domain ! UserDNSList covers sessioncam, smartlook, userreplay as static.
+/^(?:[a-z0-9-]+\.)*(?:clicktale|mouseflow)\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:survey(?:link)?|stats?)\.[a-z.]{2,}$/
 
 
 ! =============================================================================
 ! 🏠 8. IoT DEVICE TRACKING
-! Blocks telemetry from IoT devices and smart home products.
+! Heads-up: diagnostics may degrade; allowlist per device if you need stability.
 ! =============================================================================
-||gcloudiap.googleapis.com^
-||blink-app-service.lamarzocco.io^
-||stats.govee.com^
-||metrics.apple.com^
-||crashlytics.googleapis.com^
-||iot-analytics.amazon.com^
-||data.alexa.amazon.com^
-||api.smartthings.com^
-||telemetry.philips-hue.com^
-||metrics.nest.com^
-||logs.ecobee.com^
 ||analytics.sonos.com^
+||api.smartthings.com^
+||blink-app-service.lamarzocco.io^
+||crashlytics.googleapis.com^
+||data.alexa.amazon.com^
+||gcloudiap.googleapis.com^
+||iot-analytics.amazon.com^
+||logs.ecobee.com^
+||metrics.apple.com^
+||metrics.nest.com^
+||stats.govee.com^
+||telemetry.philips-hue.com^
+
 
 ! =============================================================================
 ! 🎥 9. VIDEO CONFERENCING TELEMETRY
-! Blocks analytics and telemetry from video conferencing platforms.
+! If meetings glitch, test by allowlisting the affected vendor below.
 ! =============================================================================
-||analytics.zoom.us^
-||telemetry.teams.microsoft.com^
-||rtc-telemetry.microsoft.com^
-||browser-intake-datadoghq.com^
-||analytics.skype.com^
-||telemetry.webex.com^
 ||analytics.bluejeans.com^
+||analytics.skype.com^
+||analytics.zoom.us^
+||browser-intake-datadoghq.com^
+||rtc-telemetry.microsoft.com^
+||telemetry.teams.microsoft.com^
+||telemetry.webex.com^
+
 
 ! =============================================================================
-! ✅ 10. ESSENTIAL WHITELIST
-! Prevents blocking of critical services, CDNs, OS connectivity, and time servers.
+! 🚧 10. AGGRESSIVE (OPTIONAL — COMMENTED OUT)
+! These rules can break functionality. Uncomment (`!||` -> `||`) to enable.
 ! =============================================================================
-! ---10.1 Core Services & Infrastructure ---
+
+! --- 10.1 Desktop Software Telemetry (Optional) ---
+! Blocks data collection from common desktop/productivity apps.
+! May break license checks or automatic updates.
+! ||telemetry.visualstudio.com^
+! ||data.figma.com^
+! ||data.services.jetbrains.com^
+! ||telemetry.docker.com^
+
+! --- 10.2 Aggressive Web Services (Optional) ---
+! These often break support portals or embedded help. Enable if you want them gone.
+! ||freshchat.com^
+! ||intercom.io^
+! ||salesforceliveagent.com^
+! ||sessioncam.com^
+! ||sitescout.com^
+! ||smartlook.com^
+! ||userreplay.com^
+! ||zendesk.com^
+
+
+! =============================================================================
+! ✅ 11. ESSENTIAL WHITELIST — CORE SERVICES & INFRA
+! $important → wins over blocks. Keep this lean & boring.
+! =============================================================================
 @@||accounts.google.com^$important
 @@||adaway.org^$important
 @@||ajax.googleapis.com^$important
@@ -302,8 +335,8 @@
 @@||cdn.jsdelivr.net^$important
 @@||cdnjs.cloudflare.com^$important
 @@||cloudflare.com^$important
-@@||cloudflareinsights.com^$important
-@@dbl.oisd.nl^$important
+@@||content.googleapis.com^$important
+@@||dbl.oisd.nl^$important
 @@||debian.org^$important
 @@||duck.com^$important
 @@||duckduckgo.com^$important
@@ -318,8 +351,6 @@
 @@||githubusercontent.com^$important
 @@||gitlab.com^$important
 @@||googleapis.com^$important
-@@||youtube.com^$important
-@@||youtu.be^$important
 @@||kernel.org^$important
 @@||linux.org^$important
 @@||login.microsoftonline.com^$important
@@ -327,7 +358,7 @@
 @@||opensuse.org^$important
 @@||paypal.com^$important
 @@||paypalobjects.com^$important
-@@pgl.yoyo.org^$important
+@@||pgl.yoyo.org^$important
 @@||proton.me^$important
 @@||protonmail.com^$important
 @@||signal.org^$important
@@ -338,13 +369,15 @@
 @@||ubuntu.com^$important
 @@||unpkg.com^$important
 @@||wikimedia.org^$important
-@@||wikipedia.org^$important
+||wikipedia.org^$important
+@@||youtube.com^$important
+@@||youtu.be^$important
 @@||ytimg.com^$important
 
-! --- 10.2 OS Connectivity & Time Servers ---
+! Connectivity & time (prevent false “offline” states)
+@@||captive.apple.com^$important
 @@||connectivitycheck.android.com^$important
 @@||connectivitycheck.gstatic.com^$important
-@@||captive.apple.com^$important
 @@||detectportal.firefox.com^$important
 @@||msftconnecttest.com^$important
 @@||msftncsi.com^$important
@@ -355,121 +388,124 @@
 @@||time.google.com^$important
 @@||time.windows.com^$important
 
-! --- 10.3 Additional Essential Services & CDNs ---
-@@||cdn.optimizely.com^$important
+! Identity / SSO / CAPTCHA
 @@||auth0.com^$important
-@@||okta.com^$important
-@@||akamaized.net^$important
-@@||fastly.net^$important
-@@||akamai.net^$important
-@@||polyfill.io^$important
-@@||gstatic.com^$important
-@@||content.googleapis.com^$important
-@@||identity.netlify.com^$important
-@@||recaptcha.net^$important
 @@||hcaptcha.com^$important
+@@||identity.netlify.com^$important
+@@||okta.com^$important
+@@||recaptcha.net^$important
 
-! --- 10.4 Essential Whitelist Regex (Optimized Regex for DNS) ---
-@@/^(?:[a-z0-9-]+\.)*(?:spotify|reddit(?:media)?|sci-hub|mega|soundcloud)\.(?:com|nl|io|tw|se|do)/$domain,$important
-@@/^clients[0-9]*\.google\.(?:com|[a-z.]{2,})/$domain,$important
-@@/^(?:cdn|api|login|accounts)\.(?:github|gitlab)\.(?:com|io)/$domain,$important ! Supplements github.com, gitlab.com above
-@@/^oauth\..*\.com$/$domain,$important
-@@/^auth\..*\.com$/$domain,$important
-@@/^identity\..*\.com$/$domain,$important
-@@/^sso\..*\.com$/$domain,$important
+! CDNs (typical static asset delivery)
+@@||akamai.net^$important
+@@||akamaized.net^$important
+! @@||content.googleapis.com^$important ! Duplicate, already listed above
+@@||fastly.net^$important
+@@||gstatic.com^$important
 
-
-! =============================================================================
-! ➕ 11. OPTIONAL WHITELISTS 
-! - Uncomment = Enable Whitelist --> Query is unblocked/allowed
-! - Comment = Disable Whitelist --> Query is blocked
-! 
-! Uncomment/Comment rules as needed for utilities, gaming, torrents, adult content
-! based on personal preference.
-! =============================================================================
-! --- 11.1 Utility Services ---
-@@/^ipv(?:4|6)\.icanhazip\.com$/$domain,$important
-@@||ipinfo.io^$important
-@@||api.ipify.org^$important
-@@||checkip.amazonaws.com^$important
-@@||ifconfig.me^$important
-@@||wtfismyip.com^$important
-@@||icanhazip.com^$important
-
-! --- 11.2 Gaming Platforms ---
-@@||steamcommunity.com^$important
-@@||steampowered.com^$important
-@@||steamcdn-a.akamaihd.net^$important
-@@||epicgames.com^$important
-@@||ea.com^$important
-@@||origin.com^$important
-!@@||blizzard.com^$important
-!@@||battle.net^$important
-!@@||playstation.com^$important
-!@@||xbox.com^$important
-!@@||xboxlive.com^$important ! MyDNSList had xboxlive.com
-@@||riotgames.com^$important
-@@||gog.com^$important
-@@||nvidia.com^$important
-@@||amd.com^$important
-
-! --- 11.3 Torrent Trackers ---
-@@||1337x.to^$important
-@@||explodie.org^$important
-@@||iptorrents.com^$important
-@@||ipv4.tracker.harry.lu^$important
-@@||limetorrents.cc^$important
-@@||nyaa.si^$important
-@@||rarbg.to^$important
-@@||thepiratebay.org^$important
-@@||torrentgalaxy.to^$important
-@@||tracker.bt4g.com^$important
-@@||tracker.coppersurfer.tk^$important
-@@||tracker.dler.org^$important
-@@||tracker.gbitt.info^$important
-@@||tracker.internetwarriors.net^$important
-@@||tracker.leechers-paradise.org^$important
-@@||tracker.nanoha.org^$important
-@@||tracker.openbittorrent.com^$important
-@@||tracker.opentrackr.org^$important
-@@||tracker.torrent.eu.org^$important
-@@||tracker2.itzmx.com^$important
-@@||yts.mx^$important
-
-! --- 11.4 Adult Entertainment (NSFW) Whitelist Regex ---
-@@/^(?:[a-z0-9-]+\.)*(?:pornhub|xnxx|xvideos|xhamster|youporn)\.(?:com|nl|io|tw|se|do)$/$domain,$important
+! OCSP / PKI (TLS stability during browsing & auth)
+@@||ocsp.apple.com^$important
+@@||ocsp.digicert.com^$important
+@@||ocsp.globalsign.com^$important
+@@||ocsp.godaddy.com^$important
+@@||ocsp.int-x3.letsencrypt.org^$important
+@@||ocsp.msocsp.com^$important
+@@||ocsp.pki.goog^$important
+@@||ocsp.sectigo.com^$important
+@@||ocsp.usertrust.com^$important
+@@||r3.o.lencr.org^$important
 
 
 ! =============================================================================
-! 📝 12. NOTES ON ADGUARD DNS FILTERING
+! ✅ 12. ESSENTIAL WHITELIST — DNS-SAFE REGEX
+! No $domain or $important on regex allows (keeps parser happy).
 ! =============================================================================
-! 1. This list is specifically optimized for AdGuard DNS. It uses only domain-based
-!    rules and domain-specific regular expressions.
-! 2. Rules unsupported by DNS-level filtering (cosmetic, path/parameter-specific,
-!    most scriptlets, and client-side modifiers) have been excluded.
-! 3. Regular expressions are used for broader pattern matching but are chosen for
-!    efficiency at the DNS level.
-! 4. If a legitimate website or service is inadvertently blocked (false positive),
-!    please identify the responsible rule. You can then whitelist the specific
-!    domain or report the issue for list refinement.
-! 5. The ad and tracking landscape evolves rapidly. Keep this list updated by
-!    checking its source or re-generating if based on evolving inputs.
-! 6. For blocking specific elements on a page, trackers by full path, or URL
-!    parameters, complement DNS filtering with a browser-based ad blocker.
-! =============================================================================
+@@/^auth\..*\.com$/
+@@/^clients[0-9]*\.google\.(?:com|[a-z.]{2,})$/
+@@/^identity\..*\.com$/
+@@/^oauth\..*\.com$/
+@@/^sso\..*\.com$/
+@@/^(?:cdn|api|login|accounts)\.(?:github|gitlab)\.(?:com|io)$/
+@@/^(?:[a-z0-9-]+\.)*(?:spotify|reddit(?:media)?|mega|soundcloud)\.(?:com|nl|io|tw|se|do)$/
 
 
 ! =============================================================================
-! 📌 13. INDUSTRY BEST PRACTICES & NOTES
-! Important considerations for maintaining filter quality.
+! ➕ 13. OPTIONAL WHITELISTS (toggle as needed)
+! Keep commented until you observe breakage tied to these.
 ! =============================================================================
-! 1) Regularly update filters from trusted sources (EasyList, EasyPrivacy, etc.).
-! 2) Use anchored regex to avoid partial matches.
-! 3) Keep whitelists minimal to avoid bypassing protections.
-! 4) Monitor logs for false positives and refine patterns as needed.
-! 5) Segment filters into aggressive and moderate lists if necessary.
-! 6) Use "$important" only when absolutely necessary to override other rules.
-! 7) Reassess domain blocks periodically to avoid false positives.
-! 8) Prioritize specific rules over broad regex patterns for accuracy.
-! 9) Consider using user scripts for more complex filtering logic.
+
+! Utilities / IP checkers
+@@/^ipv(?:4|6)\.icanhazip\.com$/
+@@||api.ipify.org^
+@@||checkip.amazonaws.com^
+@@||icanhazip.com^
+@@||ifconfig.me^
+@@||ipinfo.io^
+@@||wtfismyip.com^
+
+! Gaming platforms (active)
+@@||amd.com^
+@@||ea.com^
+@@||epicgames.com^
+@@||gog.com^
+@@||nvidia.com^
+@@||origin.com^
+@@||riotgames.com^
+@@||steamcdn-a.akamaihd.net^
+@@||steamcommunity.com^
+@@||steampowered.com^
+
+! Gaming platforms (commented; enable if needed)
+!@@||battle.net^
+!@@||blizzard.com^
+!@@||playstation.com^
+!@@||xbox.com^
+!@@||xboxlive.com^
+
+! Torrents / trackers (volatile; many mirrors change)
+@@||1337x.to^
+@@||explodie.org^
+@@||iptorrents.com^
+@@||ipv4.tracker.harry.lu^
+@@||limetorrents.cc^
+@@||nyaa.si^
+@@||rarbg.to^
+@@||thepiratebay.org^
+@@||torrentgalaxy.to^
+@@||tracker.bt4g.com^
+@@||tracker.coppersurfer.tk^
+@@||tracker.dler.org^
+@@||tracker.gbitt.info^
+@@||tracker.internetwarriors.net^
+@@||tracker.leechers-paradise.org^
+@@||tracker.nanoha.org^
+@@||tracker.openbittorrent.com^
+@@||tracker.opentrackr.org^
+@@||tracker.torrent.eu.org^
+@@||tracker2.itzmx.com^
+@@||yts.mx^
+
+! Adult (NSFW) — optional
+@@/^(?:[a-f-Z-9-]+\.)*(?:pornhub|xnxx|xvideos|xhamster|youporn)\.(?:com|nl|io|tw|se|do)$/
+
+
+! =============================================================================
+! ✅ 14. QUICK UNBREAK EXAMPLES
+! Use these as temporary toggles while you investigate root cause.
+! =============================================================================
+! @@||discovery.meethue.com^
+! @@||firebaseio.com^
+! @@||intercom.io^
+! @@||onesignal.com^
+! @@||zendesk.com^
+
+! =============================================================================
+! ℹ️ 15. MAINTAINER NOTES
+! =============================================================================
+! • Order doesn’t affect DNS matching, but keeping sections tidy helps diffing.
+! • Punycode: IDNs appear as xn--*. Add rules using the punycode form if needed.
+! • CNAME cloaking: AdGuard can detect some CNAMEs; still, block root trackers directly (as above).
+! • Alternative resolvers: do NOT allowlist public DoH/DoT endpoints unless you want clients bypassing AdGuard.
+! • If you see latency spikes, trim regex count (start with the broad tracking line).
+! • Review whitelists: Periodically review your @@ rules. An unneeded or compromised 
+!   whitelist (like the historic polyfill.io case) is a security risk.
 ! =============================================================================
