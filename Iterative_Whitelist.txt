@@ -199,7 +199,8 @@
 @@||yts.mx^
 
 ! Adult (NSFW) — optional
-@@/^(?:[a-f-Z-9-]+\.)*(?:pornhub|xnxx|xvideos|xhamster|youporn)\.(?:com|nl|io|tw|se|do)$/
+! Note: Added redtube, spankbang, and common live cam sites.
+@@/^(?:[a-z0-9-]+\.)*(?:pornhub|xnxx|xvideos|xhamster|youporn|redtube|spankbang|chaturbate|bongacams|livejasmin)\.(?:com|nl|io|tw|se|do)$/
 
 ! =============================================================================
 ! ✅ 14. QUICK UNBREAK EXAMPLES
