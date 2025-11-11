@@ -199,8 +199,18 @@
 @@||yts.mx^
 
 ! Adult (NSFW) — optional
-! Note: Added redtube, spankbang, and common live cam sites.
-@@/^(?:[a-z0-9-]+\.)*(?:pornhub|xnxx|xvideos|xhamster|youporn|redtube|spankbang|chaturbate|bongacams|livejasmin)\.(?:com|nl|io|tw|se|do)$/
+! Note: Expanded to include popular sites, essential CDNs, and payment gateways.
+! --- 13.1 Major Tube Sites & CDNs ---
+@@/^(?:[a-z0-9-]+\.)*(?:pornhub|phncdn|xnxx|xvideos|xv-cdn|xhamster|xhcdn|youporn|redtube|spankbang)\.[a-z.]{2,}$/
+
+! --- 13.2 Live Cam Sites & CDNs ---
+@@/^(?:[a-z0-9-]+\.)*(?:chaturbate|bongacams|bngpt|livejasmin|myfreecams|stripchat)\.[a-z.]{2,}$/
+
+! --- 13.3 Studio & Niche/Image Hosts ---
+@@/^(?:[a-z0-9-]+\.)*(?:brazzers|naughtyamerica|realitykings|redgifs|erome|nhentai)\.[a-z.]{2,}$/
+
+! --- 13.4 Payment Processors ---
+@@/^(?:[a-z0-9-]+\.)*(?:epoch|segpay)\.[a-z.]{2,}$/
 
 ! =============================================================================
 ! ✅ 14. QUICK UNBREAK EXAMPLES
