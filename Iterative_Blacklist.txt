@@ -320,3 +320,15 @@
 ! ||smartlook.com^
 ! ||userreplay.com^
 ! ||zendesk.com^
+
+! =============================================================================
+! ℹ️ 15. MAINTAINER NOTES
+! =============================================================================
+! • Order doesn’t affect DNS matching, but keeping sections tidy helps diffing.
+! • Punycode: IDNs appear as xn--*. Add rules using the punycode form if needed.
+! • CNAME cloaking: AdGuard can detect some CNAMEs; still, block root trackers directly (as above).
+! • Alternative resolvers: do NOT allowlist public DoH/DoT endpoints unless you want clients bypassing AdGuard.
+! • If you see latency spikes, trim regex count (start with the broad tracking line).
+! • Review whitelists: Periodically review your @@ rules. An unneeded or compromised 
+!   whitelist (like the historic polyfill.io case) is a security risk.
+! =============================================================================
