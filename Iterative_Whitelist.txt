@@ -1,8 +1,45 @@
 ! =============================================================================
-! ✅ 10. ESSENTIAL WHITELIST
-! Prevents blocking of critical services, CDNs, OS connectivity, and time servers.
+! Title: Combined Optimal AdGuard DNS Filter (Improved)
+! Description: DNS-only rules for AdGuard DNS. Safe defaults + practical allows.
+! Version: v1.2.0 (Improved)
+! Last Updated: 2025-11-11
+!
+! CHANGELOG (v1.4.1):
+! • Added PKI staple for older Let's Encrypt chains.
+! • Added performance note for broad tracking regex.
+! • Fixed typo in Section 14 divider.
+!
+! HOW THIS LIST IS DESIGNED
+! • DNS context only (no cosmetic rules, no path/param matching).
+! • Specific domains first (fast, predictable) → regex patterns (carefully scoped).
+! • Allow rules:
+!  	  – Plain @@ rules keep $important (higher priority).
+!  	  – Regex @@ rules omit modifiers for stability.
+! • “AGGRESSIVE” blocks and “OPTIONAL” allows are off by default — enable consciously.
+!
+! DEBUGGING PLAYBOOK (quick)
+! 1) In AdGuard logs filter by “Blocked by custom filtering rules”.
+! 2) If breakage is from a regex, allowlist the exact domain with @@||domain.tld^
+! 3) Prefer adding per-site @@ over deleting a global block rule.
+! 4) If TLS/SSO fails sporadically, check OCSP/PKI allows below.
+!
+! TUNING PLAYBOOK (personalize your list)
+! 1) Find New Blocks: Check your "Allowed" query log for tracker-like domains 
+!    (e.g., telemetry.app-you-use.com) and add them to the blocklist.
+! 2) Find False Positives: Check your "Blocked" log for legitimate services 
+!    that are broken. Add them to "Section 14: QUICK UNBREAK EXAMPLES"
+!    (e.g., @@||service.that-broke.com^).
+!
+! REGEX NOTES (important)
+! • All regexes match the FULL hostname (we anchor with ^ and $).
+! • End-of-domain class uses [a-z.]{2,} to tolerate multi-label TLDs (e.g., co.uk).
+! • Keep regex count modest: they evaluate on each query. Favor plain domains where possible.
 ! =============================================================================
-! ---10.1 Core Services & Infrastructure ---
+
+! =============================================================================
+! ✅ 11. ESSENTIAL WHITELIST — CORE SERVICES & INFRA
+! $important → wins over blocks. Keep this lean & boring.
+! =============================================================================
 @@||accounts.google.com^$important
 @@||adaway.org^$important
 @@||ajax.googleapis.com^$important
@@ -12,8 +49,8 @@
 @@||cdn.jsdelivr.net^$important
 @@||cdnjs.cloudflare.com^$important
 @@||cloudflare.com^$important
-@@||cloudflareinsights.com^$important
-@@dbl.oisd.nl^$important
+@@||content.googleapis.com^$important
+@@||dbl.oisd.nl^$important
 @@||debian.org^$important
 @@||duck.com^$important
 @@||duckduckgo.com^$important
@@ -28,8 +65,6 @@
 @@||githubusercontent.com^$important
 @@||gitlab.com^$important
 @@||googleapis.com^$important
-@@||youtube.com^$important
-@@||youtu.be^$important
 @@||kernel.org^$important
 @@||linux.org^$important
 @@||login.microsoftonline.com^$important
@@ -37,7 +72,7 @@
 @@||opensuse.org^$important
 @@||paypal.com^$important
 @@||paypalobjects.com^$important
-@@pgl.yoyo.org^$important
+@@||pgl.yoyo.org^$important
 @@||proton.me^$important
 @@||protonmail.com^$important
 @@||signal.org^$important
@@ -48,13 +83,15 @@
 @@||ubuntu.com^$important
 @@||unpkg.com^$important
 @@||wikimedia.org^$important
-@@||wikipedia.org^$important
+||wikipedia.org^$important
+@@||youtube.com^$important
+@@||youtu.be^$important
 @@||ytimg.com^$important
 
-! --- 10.2 OS Connectivity & Time Servers ---
+! Connectivity & time (prevent false “offline” states)
+@@||captive.apple.com^$important
 @@||connectivitycheck.android.com^$important
 @@||connectivitycheck.gstatic.com^$important
-@@||captive.apple.com^$important
 @@||detectportal.firefox.com^$important
 @@||msftconnecttest.com^$important
 @@||msftncsi.com^$important
@@ -65,86 +102,123 @@
 @@||time.google.com^$important
 @@||time.windows.com^$important
 
-! --- 10.3 Additional Essential Services & CDNs ---
-@@||cdn.optimizely.com^$important
+! Identity / SSO / CAPTCHA
 @@||auth0.com^$important
-@@||okta.com^$important
-@@||akamaized.net^$important
-@@||fastly.net^$important
-@@||akamai.net^$important
-@@||polyfill.io^$important
-@@||gstatic.com^$important
-@@||content.googleapis.com^$important
-@@||identity.netlify.com^$important
-@@||recaptcha.net^$important
 @@||hcaptcha.com^$important
+@@||identity.netlify.com^$important
+@@||okta.com^$important
+@@||recaptcha.net^$important
 
-! --- 10.4 Essential Whitelist Regex (Optimized Regex for DNS) ---
-@@/^(?:[a-z0-9-]+\.)*(?:spotify|reddit(?:media)?|sci-hub|mega|soundcloud)\.(?:com|nl|io|tw|se|do)/$domain,$important
-@@/^clients[0-9]*\.google\.(?:com|[a-z.]{2,})/$domain,$important
-@@/^(?:cdn|api|login|accounts)\.(?:github|gitlab)\.(?:com|io)/$domain,$important ! Supplements github.com, gitlab.com above
-@@/^oauth\..*\.com$/$domain,$important
-@@/^auth\..*\.com$/$domain,$important
-@@/^identity\..*\.com$/$domain,$important
-@@/^sso\..*\.com$/$domain,$important
+! CDNs (typical static asset delivery)
+@@||akamai.net^$important
+@@||akamaized.net^$important
+! @@||content.googleapis.com^$important ! Duplicate, already listed above
+@@||fastly.net^$important
+@@||gstatic.com^$important
+
+! OCSP / PKI (TLS stability during browsing & auth)
+@@||ocsp.apple.com^$important
+@@||ocsp.digicert.com^$important
+@@||ocsp.globalsign.com^$important
+@@||ocsp.godaddy.com^$important
+@@||ocsp.int-x3.letsencrypt.org^$important
+@@||ocsp.msocsp.com^$important
+@@||ocsp.pki.goog^$important
+@@||ocsp.sectigo.com^$important
+@@||ocsp.usertrust.com^$important
+@@||r3.o.lencr.org^$important
 
 
 ! =============================================================================
-! ➕ 11. OPTIONAL WHITELISTS 
-! - Uncomment = Enable Whitelist --> Query is unblocked/allowed
-! - Comment = Disable Whitelist --> Query is blocked
-! 
-! Uncomment/Comment rules as needed for utilities, gaming, torrents, adult content
-! based on personal preference.
+! ✅ 12. ESSENTIAL WHITELIST — DNS-SAFE REGEX
+! No $domain or $important on regex allows (keeps parser happy).
 ! =============================================================================
-! --- 11.1 Utility Services ---
-@@/^ipv(?:4|6)\.icanhazip\.com$/$domain,$important
-@@||ipinfo.io^$important
-@@||api.ipify.org^$important
-@@||checkip.amazonaws.com^$important
-@@||ifconfig.me^$important
-@@||wtfismyip.com^$important
-@@||icanhazip.com^$important
+@@/^auth\..*\.com$/
+@@/^clients[0-9]*\.google\.(?:com|[a-z.]{2,})$/
+@@/^identity\..*\.com$/
+@@/^oauth\..*\.com$/
+@@/^sso\..*\.com$/
+@@/^(?:cdn|api|login|accounts)\.(?:github|gitlab)\.(?:com|io)$/
+@@/^(?:[a-z0-9-]+\.)*(?:spotify|reddit(?:media)?|mega|soundcloud)\.(?:com|nl|io|tw|se|do)$/
 
-! --- 11.2 Gaming Platforms ---
-@@||steamcommunity.com^$important
-@@||steampowered.com^$important
-@@||steamcdn-a.akamaihd.net^$important
-@@||epicgames.com^$important
-@@||ea.com^$important
-@@||origin.com^$important
-!@@||blizzard.com^$important
-!@@||battle.net^$important
-!@@||playstation.com^$important
-!@@||xbox.com^$important
-!@@||xboxlive.com^$important ! MyDNSList had xboxlive.com
-@@||riotgames.com^$important
-@@||gog.com^$important
-@@||nvidia.com^$important
-@@||amd.com^$important
 
-! --- 11.3 Torrent Trackers ---
-@@||1337x.to^$important
-@@||explodie.org^$important
-@@||iptorrents.com^$important
-@@||ipv4.tracker.harry.lu^$important
-@@||limetorrents.cc^$important
-@@||nyaa.si^$important
-@@||rarbg.to^$important
-@@||thepiratebay.org^$important
-@@||torrentgalaxy.to^$important
-@@||tracker.bt4g.com^$important
-@@||tracker.coppersurfer.tk^$important
-@@||tracker.dler.org^$important
-@@||tracker.gbitt.info^$important
-@@||tracker.internetwarriors.net^$important
-@@||tracker.leechers-paradise.org^$important
-@@||tracker.nanoha.org^$important
-@@||tracker.openbittorrent.com^$important
-@@||tracker.opentrackr.org^$important
-@@||tracker.torrent.eu.org^$important
-@@||tracker2.itzmx.com^$important
-@@||yts.mx^$important
+! =============================================================================
+! ➕ 13. OPTIONAL WHITELISTS (toggle as needed)
+! Keep commented until you observe breakage tied to these.
+! =============================================================================
 
-! --- 11.4 Adult Entertainment (NSFW) Whitelist Regex ---
-@@/^(?:[a-z0-9-]+\.)*(?:pornhub|xnxx|xvideos|xhamster|youporn)\.(?:com|nl|io|tw|se|do)$/$domain,$important
+! Utilities / IP checkers
+@@/^ipv(?:4|6)\.icanhazip\.com$/
+@@||api.ipify.org^
+@@||checkip.amazonaws.com^
+@@||icanhazip.com^
+@@||ifconfig.me^
+@@||ipinfo.io^
+@@||wtfismyip.com^
+
+! Gaming platforms (active)
+@@||amd.com^
+@@||ea.com^
+@@||epicgames.com^
+@@||gog.com^
+@@||nvidia.com^
+@@||origin.com^
+@@||riotgames.com^
+@@||steamcdn-a.akamaihd.net^
+@@||steamcommunity.com^
+@@||steampowered.com^
+
+! Gaming platforms (commented; enable if needed)
+!@@||battle.net^
+!@@||blizzard.com^
+!@@||playstation.com^
+!@@||xbox.com^
+!@@||xboxlive.com^
+
+! Torrents / trackers (volatile; many mirrors change)
+@@||1337x.to^
+@@||explodie.org^
+@@||iptorrents.com^
+@@||ipv4.tracker.harry.lu^
+@@||limetorrents.cc^
+@@||nyaa.si^
+@@||rarbg.to^
+@@||thepiratebay.org^
+@@||torrentgalaxy.to^
+@@||tracker.bt4g.com^
+@@||tracker.coppersurfer.tk^
+@@||tracker.dler.org^
+@@||tracker.gbitt.info^
+@@||tracker.internetwarriors.net^
+@@||tracker.leechers-paradise.org^
+@@||tracker.nanoha.org^
+@@||tracker.openbittorrent.com^
+@@||tracker.opentrackr.org^
+@@||tracker.torrent.eu.org^
+@@||tracker2.itzmx.com^
+@@||yts.mx^
+
+! Adult (NSFW) — optional
+@@/^(?:[a-f-Z-9-]+\.)*(?:pornhub|xnxx|xvideos|xhamster|youporn)\.(?:com|nl|io|tw|se|do)$/
+
+! =============================================================================
+! ✅ 14. QUICK UNBREAK EXAMPLES
+! Use these as temporary toggles while you investigate root cause.
+! =============================================================================
+! @@||discovery.meethue.com^
+! @@||firebaseio.com^
+! @@||intercom.io^
+! @@||onesignal.com^
+! @@||zendesk.com^
+
+! =============================================================================
+! ℹ️ 15. MAINTAINER NOTES
+! =============================================================================
+! • Order doesn’t affect DNS matching, but keeping sections tidy helps diffing.
+! • Punycode: IDNs appear as xn--*. Add rules using the punycode form if needed.
+! • CNAME cloaking: AdGuard can detect some CNAMEs; still, block root trackers directly (as above).
+! • Alternative resolvers: do NOT allowlist public DoH/DoT endpoints unless you want clients bypassing AdGuard.
+! • If you see latency spikes, trim regex count (start with the broad tracking line).
+! • Review whitelists: Periodically review your @@ rules. An unneeded or compromised 
+!   whitelist (like the historic polyfill.io case) is a security risk.
+! =============================================================================
