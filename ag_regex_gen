@@ -1,335 +1,511 @@
-#!/usr/bin/env python3
-"""
-AdGuard Blocklist Generator - V0.1.0
-
-Transform your blocklists from the hosts format into AdGuard (Regex) rules.
-
-Run with: 
-python ./ag_regex_gen.py <blocklist_in_host_format> <output_in_adguard_format> --min-cluster-size <min_cluster_size=25> --subdomain-threshold <subdomain-threshold, default=5> --verbose --parallel
-
-Features:
- 1. Parent-domain generalization with PUBLIC_SUFFIX_WHITELIST
- 2. Heuristic random-segment rule generation
- 3. Hyper-optimized regex bundling via build_regex_from_group()
- 4. Default “all-in” phases with opt-out flags:
-    --no-generalization, --no-heuristics
-"""
-import sys
-import re
-import os
-import logging
-import argparse
-from pathlib import Path
-from collections import defaultdict
-import concurrent.futures
-
-# Optional public-suffix extractor
-try:
-    import tldextract
-except ImportError:
-    tldextract = None
-
-# --- Configuration & Whitelists ---
-MIN_STRINGS_FOR_CHAR_CLASS  = 5
-DEFAULT_CLUSTER_SIZE        = 25
-DEFAULT_SUBDOMAIN_THRESHOLD = 5
-DEFAULT_MAX_RULE_LEN        = 1500
-
-PUBLIC_SUFFIX_WHITELIST = {
-    'github.io', 'blogspot.com', 'wordpress.com', 'wixsite.com', 'weebly.com',
-    's3.amazonaws.com', 'cloudfront.net', 'appspot.com', 'firebaseapp.com',
-    'netlify.app', 'vercel.app', 'azurewebsites.net', 'herokuapp.com',
-    'duckdns.org', 'no-ip.com', 'dyndns.org',
-    'co.uk', 'com.au', 'co.jp', 'com.br', 'com.cn', 'co.za', 'com.mx', 'com.ru', 'com.de'
-}
-
-# Setup logger
-logger = logging.getLogger(__name__)
-handler = logging.StreamHandler(sys.stderr)
-handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+! =============================================================================
+! Title: Combined Optimal AdGuard DNS Filter (Improved)
+! Description: DNS-only rules for AdGuard DNS. Safe defaults + practical allows.
+! Version: v0.2.0 (Improved)
+! Last Updated: 2025-11-11
+!
+! CHANGELOG (v1.4.1):
+! • Added PKI staple for older Let's Encrypt chains.
+! • Added performance note for broad tracking regex.
+! • Fixed typo in Section 14 divider.
+!
+! HOW THIS LIST IS DESIGNED
+! • DNS context only (no cosmetic rules, no path/param matching).
+! • Specific domains first (fast, predictable) → regex patterns (carefully scoped).
+! • Allow rules:
+!  	  – Plain @@ rules keep $important (higher priority).
+!  	  – Regex @@ rules omit modifiers for stability.
+! • “AGGRESSIVE” blocks and “OPTIONAL” allows are off by default — enable consciously.
+!
+! DEBUGGING PLAYBOOK (quick)
+! 1) In AdGuard logs filter by “Blocked by custom filtering rules”.
+! 2) If breakage is from a regex, allowlist the exact domain with @@||domain.tld^
+! 3) Prefer adding per-site @@ over deleting a global block rule.
+! 4) If TLS/SSO fails sporadically, check OCSP/PKI allows below.
+!
+! TUNING PLAYBOOK (personalize your list)
+! 1) Find New Blocks: Check your "Allowed" query log for tracker-like domains 
+!    (e.g., telemetry.app-you-use.com) and add them to the blocklist.
+! 2) Find False Positives: Check your "Blocked" log for legitimate services 
+!    that are broken. Add them to "Section 14: QUICK UNBREAK EXAMPLES"
+!    (e.g., @@||service.that-broke.com^).
+!
+! REGEX NOTES (important)
+! • All regexes match the FULL hostname (we anchor with ^ and $).
+! • End-of-domain class uses [a-z.]{2,} to tolerate multi-label TLDs (e.g., co.uk).
+! • Keep regex count modest: they evaluate on each query. Favor plain domains where possible.
+! =============================================================================
 
 
-def validate_domain(domain: str) -> bool:
-    """IDNA-encode + ASCII-TLD regex validation."""
-    try:
-        a = domain.encode('idna').decode('ascii')
-    except Exception:
-        return False
-    if len(a) > 253:
-        return False
-    return bool(re.match(
-        r'^(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,}$',
-        a
-    ))
+! =============================================================================
+! 🛑 1. CORE AD BLOCKING
+! Purpose: high-signal ad networks; minimal false positives.
+! =============================================================================
+
+! --- 1.1 Major Ad Networks (Specific Domains) ---
+||aaxads.com^
+||adnxs.com^
+||adservice.google.com^
+||advertising.com^
+||amazon-adsystem.com^
+||ads.yahoo.com^
+||adsrvr.org^
+||bidswitch.net^
+||casalemedia.com^
+||criteo.com^
+||doubleclick.net^
+||googlesyndication.com^
+||moatads.com^
+||openx.net^
+||outbrain.com^
+||pubmatic.com^
+||rubiconproject.com^
+||taboola.com^
+
+! --- 1.2 Ad Domain Patterns (DNS-safe regex)
+! Matches hostnames whose registrable part is ad/advert/…; avoids path/param.
+/^(?:[a-z0-9-]+\.)*(?:ad(?:s?[xv]?|serv(?:er|ice)?s?)|advert(?:is(?:e|ing)|ements?)|banners?)\.[a-z.]{2,}$/
+
+! Targeted extras (incremental coverage; still anchored to full hostname)
+! Legacy, still seen in the wild:
+/^(?:[a-z0-9-]+\.)*adchoice\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*adsdk\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*adsystem\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*aff(?:iliat(?:es|ion))?\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*flashtalking\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*yieldmanager\.[a-z.]{2,}$/
 
 
-def load_domains(path: Path) -> set[str]:
-    """Read blocklist, return unique valid domains."""
-    if not path.exists():
-        logger.error(f"Input file not found: {path}")
-        sys.exit(1)
-    doms = set()
-    for line in path.read_text(encoding='utf-8', errors='ignore').splitlines():
-        t = line.strip().lower()
-        if not t or t.startswith('#'):
-            continue
-        cand = t.split()[-1]
-        if validate_domain(cand):
-            doms.add(cand)
-    return doms
+! =============================================================================
+! 📺 2. PLATFORM-SPECIFIC AD BLOCKING
+! Notes: These are common for TVs/streamers & social SDKs. Some devices degrade ads stats but continue to function.
+! =============================================================================
+
+! Specific domains (sorted)
+||ads-bidder-api.twitter.com^
+||ads-resources-client.vizio.com^
+||advertising-api.pinterest.com^
+||advertising.roku.com^
+||analytics.pinterest.com^
+||app-measurement.com^
+||lgads.tv^
+||log-upload.facebook.com^
+||log-upload.instagram.com^
+||log.pinterest.com^
+||samsungads.com^
+||telemetry.sdk.roku.com^
+||tvx.adgrx.com^
+
+! Regex (sorted by target hostname)
+/^(?:[a-z0-9-]+\.)*ads-api\.amazon\.com$/
+/^(?:[a-z0-9-]+\.)*ads\.facebook\.com$/
+/^(?:[a-z0-9-]+\.)*ads\.linkedin\.com$/
+/^(?:[a-z0-9-]+\.)*ads\.reddit\.com$/
+/^(?:[a-z0-9-]+\.)*ads\.snapchat\.com$/
+/^(?:[a-z0-9-]+\.)*ads\.tiktok\.com$/
+/^(?:[a-z0-9-]+\.)*ads\.twitter\.com$/
+/^(?:[a-z0-9-]+\.)*clicks\.beap\.bc\.yahoo\.com$/
+/^(?:[a-z0-9-]+\.)*google[_.-]?syndicat(?:e|ion)+\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:ads?|captive|logs|cloudservices)\.roku\.com$/
+/^(?:[a-z0-9-]+\.)*secure\.footprint\.net$/
 
 
-def grouping_key(domain: str) -> str:
-    """
-    Multi-stage grouping:
-      1) Any label ≥15 chars
-      2) Any label >8 chars containing digit
-      3) Numeric subdomain (if leftmost label has digits)
-      4) Else second-level domain (SLD) via tldextract or split
-    """
-    parts = domain.split('.')
-    # 1) extremely long label
-    for p in parts:
-        if len(p) >= 15:
-            return p
-    # 2) random-like label
-    for p in parts:
-        if len(p) > 8 and any(c.isdigit() for c in p):
-            return p
-    # 3) numeric subdomain
-    if tldextract:
-        ext = tldextract.extract(domain)
-        if ext.subdomain and any(c.isdigit() for c in ext.subdomain):
-            return ext.subdomain
-        return ext.domain
-    # fallback split
-    if len(parts) > 2 and any(c.isdigit() for c in parts[0]):
-        return parts[0]
-    return parts[-2] if len(parts) >= 2 else domain
+! =============================================================================
+! 🔍 3. TRACKING & ANALYTICS BLOCKING
+! Rationale: these are analytics/behavioral tools. Some are privacy-friendly but still trackers.
+! =============================================================================
+
+! --- 3.1 Major Analytics & Trackers (sorted) ---
+||amplitude.com^
+||analytics.google.com^
+||bluekai.com^
+||clarity.ms^
+||cname-tracking.com^
+||crazyegg.com^
+||dynatrace.com^
+||fathom.com^
+||fullstory.com^
+||google-analytics.com^
+||heap.io^
+||hotjar.com^
+||kissmetrics.com^
+||matomo.cloud^
+||mixpanel.com^
+||mouseflow.com^
+||newrelic.com^
+||omtrdc.net^
+||optimizely.com^
+||plausible.io^
+||quantserve.com^
+||scorecardresearch.com^
+||segment.com^
+||segment.io^
+||sentry.io^
+||statcounter.com^
+
+! --- 3.2 Modern Analytics & Tracking (sorted) ---
+||chartbeat.com^
+||clicktale.net^
+||commandersact.com^
+||contentsquare.com^
+||glassbox.com^
+||hotjar.io^
+||inspectlet.com^
+||logrocket.com^
+||permutive.com^
+||posthog.com^
+||tealiumiq.com^
+
+! --- 3.3 CNAME Cloaked Trackers (Illustrative) ---
+! These are first-party domains that hide third-party trackers.
+! You must find these in your *own* query log, as they are unique to each site.
+! ||an.example-site.com^ ! Example: CNAMEs to tracker.com
+! ||log.another-website.org^ ! Example: CNAMEs to analytics-provider.net
+
+! --- 3.4 Broad Tracking Families (keep anchors; consider perf) ---
+! If you notice DNS eval cost creeping up on weak clients, trial disabling the broad family line:
+/^(?:[a-z0-9-]+\.)*(?:track(?:er|ing)?|analytics?|telemetry|pixel(?:s)?|beacons?|metrics?)\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:crashlytics|behavior|data-collect)\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:fingerprint|device-id)\.[a-z.]{2,}$/
 
 
-def generalize_subdomains(domains: set[str], threshold: int) -> tuple[list[str], set[str]]:
-    """
-    Use PUBLIC_SUFFIX_WHITELIST to decide 2- vs 3-label parent.
-    Emit ||parent^ if ≥ threshold subdomains, remove them.
-    """
-    pm = defaultdict(set)
-    for d in domains:
-        parts = d.split('.')
-        if len(parts) > 2:
-            two = '.'.join(parts[-2:])
-            if two in PUBLIC_SUFFIX_WHITELIST and len(parts) >= 3:
-                parent = '.'.join(parts[-3:])
-            else:
-                parent = two
-        else:
-            parent = d
-        if parent not in PUBLIC_SUFFIX_WHITELIST:
-            pm[parent].add(d)
-
-    gen_rules = []
-    remaining = set(domains)
-    for parent, subs in pm.items():
-        if len(subs) >= threshold:
-            gen_rules.append(f"! Generalize {parent}\n||{re.escape(parent)}^")
-            remaining -= subs
-    return gen_rules, remaining
+! Lighter alternatives (swap in if needed):
+! /^(?:[a-z0-9-]+\.)*(?:track(?:er|ing)?)\.[a-z.]{2,}$/
+! /^(?:[a-z0-9-]+\.)*analytics?\.[a-z.]{2,}$/
+! /^(?:[a-z0-9-]+\.)*telemetry\.[a-z.]{2,}$/
 
 
-def generate_multiple_heuristic_rules(domains: set[str], min_cluster_size: int) -> list[str]:
-    """
-    Cluster on any >7-char label with digits:
-      - If identical across cluster → ||label.*^
-      - Else char-class + grouped suffix regex
-    """
-    cmap = defaultdict(list)
-    for d in domains:
-        parts = d.split('.')
-        for idx, part in enumerate(parts):
-            if len(part) > 7 and any(c.isdigit() for c in part):
-                prefix = tuple(parts[:idx])
-                suffix = tuple(parts[idx+1:])
-                sig = ''.join(sorted(set(part)))
-                cmap[(prefix, len(part), sig)].append((part, suffix))
-
-    heur = []
-    for (prefix, length, sig), entries in cmap.items():
-        if len(entries) < min_cluster_size:
-            continue
-        labels = {lbl for lbl, _ in entries}
-        # literal shortcut
-        if len(labels) == 1:
-            lit = labels.pop()
-            heur.append(
-                f"! Heuristic literal: {'.'.join(prefix) or '<root>'}.{lit}.*\n"
-                rf"||{re.escape(lit)}.*^"
-            )
-            continue
-        # fallback pattern
-        char_class = f"[{sig}]"
-        rnd = rf"{char_class}{{{length}}}"
-        pre = (r'\.'.join(re.escape(p) for p in prefix) + r'\.') if prefix else ''
-        suffixes = {
-            '' if not suf else r'\.' + r'\.'.join(re.escape(x) for x in suf)
-            for _, suf in entries
-        }
-        if len(suffixes) == 1:
-            suf_rx = suffixes.pop()
-        else:
-            suf_rx = rf"(?:{'|'.join(sorted(suffixes))})"
-        heur.append(
-            f"! Heuristic cluster: {'.'.join(prefix) or '<root>'}.<rand>.…\n"
-            rf"||{pre}{rnd}{suf_rx}^"
-        )
-    return heur
+! =============================================================================
+! ⛏️ 4. CRYPTOCURRENCY MINING & ABUSE
+! =============================================================================
+||authedmine.com^
+||browsermine.com^
+||coin-hive.com^
+||coinhive.com^
+||coinlab.biz^
+||crypto-loot.com^
+||cryptoloot.pro^
+||deepminer.org^
+||freecontent.date^
+||hashvault.pro^
+||jsecoin.com^
+||minero.cc^
+||moneroocean.stream^
+||monerominer.rocks^
+||redshell.io^
+||webmine.pro^
+||webminepool.com^
 
 
-# --- Advanced regex builder from v14 Final ---
+! =============================================================================
+! ⚠️ 5. SCAM & FRAUD BLOCKING
+! Kept to clearly malicious signals to avoid harming threat intel access.
+! =============================================================================
+||claim-reward.net^
+||free-money.site^
+||verify-your-account.com^
 
-def optimize_with_char_classes(strings: list[str]) -> str:
-    by_len = defaultdict(list)
-    for s in strings:
-        by_len[len(s)].append(s)
-    pats = []
-    for length, lst in by_len.items():
-        if len(lst) < MIN_STRINGS_FOR_CHAR_CLASS:
-            pats.append('|'.join(re.escape(s) for s in lst))
-            continue
-        slots = [set() for _ in range(length)]
-        for s in lst:
-            for i, ch in enumerate(s):
-                slots[i].add(ch)
-        pats.append(
-            ''.join(
-                f"[{''.join(sorted(chs))}]" if len(chs)>1 else re.escape(next(iter(chs)))
-                for chs in slots
-            )
-        )
-    return '|'.join(pats)
+/^(?:[a-z0-9-]+\.)*(?:crypto|bitcoin|ether|nft|scam|phish)[_-](?:gift|promo|airdrop)\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:d[ilsc]{2,}rds?-?(?:g[il]ft|n[il]tro)|gifts?-?discord)\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:free|get|claim|reward|prize|winner|youve-won)\.[a-z.]{2,}$/
 
 
-def optimize_varying_parts(parts: list[str]) -> str:
-    tld_groups = defaultdict(list)
-    lone = []
-    for part in parts:
-        if '.' in part:
-            sub, tld = part.rsplit('.', 1)
-            tld_groups[tld].append(sub)
-        else:
-            lone.append(re.escape(part))
-    chunks = []
-    for tld, subs in tld_groups.items():
-        compact = optimize_with_char_classes(subs)
-        chunks.append(rf"({compact})\.{re.escape(tld)}")
-    return '|'.join(sorted(chunks) + sorted(lone))
+! =============================================================================
+! 🦠 6. MALWARE & PHISHING PROTECTION
+! =============================================================================
+
+! --- 6.1 High-Confidence Threat Domains ---
+! This section is for specific, known-malicious domains.
+! It is best populated by a dedicated threat-intel feed (e.g., OISD, Firebog).
+! Examples of what would go here:
+! ||phishing-site-123.xyz^
+! ||malware-c2-server.net^
+! ||ransomware-drop.com^
+
+! --- 6.2 Nuisance & Generic Phishing Domains ---
+||browser-update.info^
+||download-software.net^
+||fakeupdate.net^
+||flash-player-update.com^
+||install-app.net^
+||mackeeper.com^
+||malware-check.online^
+||ransom-payment.xyz^
+||security-breach-alert.com^
+||system-check-required.info^
+||tinyurl.is^
+||update-flash.com^
+||virus-detector.site^
+||windows-defender-alert.com^
+||your-computer-is-infected.com^
+
+! --- 6.3 Malware & Phishing Domain Patterns ---
+/^(?:[a-z0-9-]+\.)*(?:malware|spyware|ransomware|virus|trojan|worm)\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:scan|clean|remove|detect|protect|security)-(?:virus|malware|spyware)\.[a-z.]{2,}$/
 
 
-def build_regex_from_group(group: list[str]) -> str:
-    if not group:
-        return ""
-    if len(group) == 1:
-        return re.escape(group[0])
-    # find prefix
-    prefix = os.path.commonprefix(group)
-    if prefix and prefix[-1] != '.':
-        idx = prefix.rfind('.')
-        prefix = prefix[:idx] if idx != -1 else ""
-    prefix = prefix.rstrip('.')
-    if len(prefix) < 5:
-        return optimize_varying_parts(group)
-    if all(d.startswith(prefix + '.') for d in group):
-        tails = [d[len(prefix)+1:] for d in group]
-        return rf"{re.escape(prefix)}\.({optimize_varying_parts(tails)})"
-    return optimize_varying_parts(group)
+! =============================================================================
+! ⚙️ 7. UNWANTED SERVICES & TELEMETRY (CONSERVATIVE)
+! May affect push, crash logs, or A/B testing. Allow per app if needed.
+! =============================================================================
+||adjust.com^
+||appsflyer.com^
+||branch.io^
+||braze.com^
+||bugsnag.com^
+||firebase.com^
+||firebaseio.com^
+||flurry.com^
+||kochava.com^
+||leanplum.com^
+||onesignal.com^
+||pushwoosh.com^
+||urbanairship.com^
+
+/^(?:[a-z0-9-]+\.)*(?:clicktale|mouseflow)\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:survey(?:link)?|stats?)\.[a-z.]{2,}$/
 
 
-def generate_standard(domains: set[str],
-                      max_len: int,
-                      parallel: bool=False
-                     ) -> tuple[list[str], list[str]]:
-    """
-    Bundle domains into URL‐regex rules ≤ max_len, plus simple ||domain^ rules.
-    """
-    groups = defaultdict(list)
-    for d in domains:
-        groups[grouping_key(d)].append(d)
-
-    multi = [sorted(v) for v in groups.values() if len(v) > 1]
-    singles = sorted(d for v in groups.values() if len(v) == 1 for d in v)
-    multi.sort(key=len, reverse=True)
-
-    if parallel:
-        workers = os.cpu_count() or 1
-        with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as ex:
-            pats = list(ex.map(build_regex_from_group, multi))
-    else:
-        pats = [build_regex_from_group(m) for m in multi]
-
-    regex_rules = []
-    parts, curr = [], 0
-    for pat in pats:
-        if not pat:
-            continue
-        if parts and curr + len(pat) + 1 > max_len:
-            regex_rules.append(rf"/^https?://(?:[\w\-]+\.)?(?:{'|'.join(parts)})/i")
-            parts, curr = [], 0
-        parts.append(pat)
-        curr += len(pat) + 1
-    if parts:
-        regex_rules.append(rf"/^https?://(?:[\w\-]+\.)?(?:{'|'.join(parts)})/i")
-
-    simple = [f"||{d}^" for d in singles]
-    return regex_rules, simple
+! =============================================================================
+! 🏠 8. IoT DEVICE TRACKING
+! Heads-up: diagnostics may degrade; allowlist per device if you need stability.
+! =============================================================================
+||analytics.sonos.com^
+||api.smartthings.com^
+||blink-app-service.lamarzocco.io^
+||crashlytics.googleapis.com^
+||data.alexa.amazon.com^
+||gcloudiap.googleapis.com^
+||iot-analytics.amazon.com^
+||logs.ecobee.com^
+||metrics.apple.com^
+||metrics.nest.com^
+||stats.govee.com^
+||telemetry.philips-hue.com^
 
 
-def main():
-    p = argparse.ArgumentParser(description="AdGuard Blocklist Generator v14.7")
-    p.add_argument('input_file',  type=Path, help='Blocklist file')
-    p.add_argument('output_file', type=Path, nargs='?', help='Output rules file')
-    p.add_argument('--no-generalization', action='store_true',
-                   help='Skip parent-domain generalization')
-    p.add_argument('--no-heuristics',       action='store_true',
-                   help='Skip heuristic rule generation')
-    p.add_argument('--min-cluster-size',    type=int, default=DEFAULT_CLUSTER_SIZE)
-    p.add_argument('--subdomain-threshold', type=int, default=DEFAULT_SUBDOMAIN_THRESHOLD)
-    p.add_argument('--max-len',             type=int, default=DEFAULT_MAX_RULE_LEN)
-    p.add_argument('--parallel',            action='store_true')
-    p.add_argument('-v', '--verbose',       action='store_true')
-    args = p.parse_args()
-
-    if args.verbose:
-        logger.setLevel(logging.DEBUG)
-
-    doms = load_domains(args.input_file)
-    logger.info(f"Loaded {len(doms)} domains")
-
-    rules = []
-
-    # 1) Generalization
-    if not args.no_generalization:
-        gens, doms = generalize_subdomains(doms, args.subdomain_threshold)
-        rules.extend(gens)
-        logger.info(f"Generalized {len(gens)} parents, {len(doms)} remain")
-
-    # 2) Heuristics
-    if not args.no_heuristics:
-        heur = generate_multiple_heuristic_rules(doms, args.min_cluster_size)
-        rules.extend(heur)
-        logger.info(f"Generated {len(heur)} heuristic rules")
-
-    # 3) Regex bundling
-    rx, simp = generate_standard(doms, args.max_len, args.parallel)
-    rules.extend(rx)
-    rules.extend(simp)
-    logger.info(f"Compressed into {len(rx)} regex + {len(simp)} simple rules")
-
-    # Write out
-    out = args.output_file or args.input_file.with_suffix('.adguard.txt')
-    Path(out).write_text("\n".join(rules), encoding='utf-8')
-    logger.info(f"Wrote {len(rules)} rules to {out}")
+! =============================================================================
+! 🎥 9. VIDEO CONFERENCING TELEMETRY
+! If meetings glitch, test by allowlisting the affected vendor below.
+! =============================================================================
+||analytics.bluejeans.com^
+||analytics.skype.com^
+||analytics.zoom.us^
+||browser-intake-datadoghq.com^
+||rtc-telemetry.microsoft.com^
+||telemetry.teams.microsoft.com^
+||telemetry.webex.com^
 
 
-if __name__ == '__main__':
-    main()
+! =============================================================================
+! 🚧 10. AGGRESSIVE (OPTIONAL — COMMENTED OUT)
+! These rules can break functionality. Uncomment (`!||` -> `||`) to enable.
+! =============================================================================
+
+! --- 10.1 Desktop Software Telemetry (Optional) ---
+! Blocks data collection from common desktop/productivity apps.
+! May break license checks or automatic updates.
+! ||telemetry.visualstudio.com^
+! ||data.figma.com^
+! ||data.services.jetbrains.com^
+! ||telemetry.docker.com^
+
+! --- 10.2 Aggressive Web Services (Optional) ---
+! These often break support portals or embedded help. Enable if you want them gone.
+! ||freshchat.com^
+! ||intercom.io^
+! ||salesforceliveagent.com^
+! ||sessioncam.com^
+! ||sitescout.com^
+! ||smartlook.com^
+! ||userreplay.com^
+! ||zendesk.com^
+
+
+! =============================================================================
+! ✅ 11. ESSENTIAL WHITELIST — CORE SERVICES & INFRA
+! $important → wins over blocks. Keep this lean & boring.
+! =============================================================================
+@@||accounts.google.com^$important
+@@||adaway.org^$important
+@@||ajax.googleapis.com^$important
+@@||api.telegram.org^$important
+@@||archlinux.org^$important
+@@||brave.com^$important
+@@||cdn.jsdelivr.net^$important
+@@||cdnjs.cloudflare.com^$important
+@@||cloudflare.com^$important
+@@||content.googleapis.com^$important
+@@||dbl.oisd.nl^$important
+@@||debian.org^$important
+@@||duck.com^$important
+@@||duckduckgo.com^$important
+@@||easylist.to^$important
+@@||fedoraproject.org^$important
+@@||filterlists.com^$important
+@@||fonts.googleapis.com^$important
+@@||fonts.gstatic.com^$important
+@@||ggpht.com^$important
+@@||gitcdn.xyz^$important
+@@||github.com^$important
+@@||githubusercontent.com^$important
+@@||gitlab.com^$important
+@@||googleapis.com^$important
+@@||kernel.org^$important
+@@||linux.org^$important
+@@||login.microsoftonline.com^$important
+@@||mozilla.org^$important
+@@||opensuse.org^$important
+@@||paypal.com^$important
+@@||paypalobjects.com^$important
+@@||pgl.yoyo.org^$important
+@@||proton.me^$important
+@@||protonmail.com^$important
+@@||signal.org^$important
+@@||stackoverflow.com^$important
+@@||startpage.com^$important
+@@||stripe.com^$important
+@@||torproject.org^$important
+@@||ubuntu.com^$important
+@@||unpkg.com^$important
+@@||wikimedia.org^$important
+||wikipedia.org^$important
+@@||youtube.com^$important
+@@||youtu.be^$important
+@@||ytimg.com^$important
+
+! Connectivity & time (prevent false “offline” states)
+@@||captive.apple.com^$important
+@@||connectivitycheck.android.com^$important
+@@||connectivitycheck.gstatic.com^$important
+@@||detectportal.firefox.com^$important
+@@||msftconnecttest.com^$important
+@@||msftncsi.com^$important
+@@||ntp.org^$important
+@@||pool.ntp.org^$important
+@@||time.apple.com^$important
+@@||time.cloudflare.com^$important
+@@||time.google.com^$important
+@@||time.windows.com^$important
+
+! Identity / SSO / CAPTCHA
+@@||auth0.com^$important
+@@||hcaptcha.com^$important
+@@||identity.netlify.com^$important
+@@||okta.com^$important
+@@||recaptcha.net^$important
+
+! CDNs (typical static asset delivery)
+@@||akamai.net^$important
+@@||akamaized.net^$important
+! @@||content.googleapis.com^$important ! Duplicate, already listed above
+@@||fastly.net^$important
+@@||gstatic.com^$important
+
+! OCSP / PKI (TLS stability during browsing & auth)
+@@||ocsp.apple.com^$important
+@@||ocsp.digicert.com^$important
+@@||ocsp.globalsign.com^$important
+@@||ocsp.godaddy.com^$important
+@@||ocsp.int-x3.letsencrypt.org^$important
+@@||ocsp.msocsp.com^$important
+@@||ocsp.pki.goog^$important
+@@||ocsp.sectigo.com^$important
+@@||ocsp.usertrust.com^$important
+@@||r3.o.lencr.org^$important
+
+
+! =============================================================================
+! ✅ 12. ESSENTIAL WHITELIST — DNS-SAFE REGEX
+! No $domain or $important on regex allows (keeps parser happy).
+! =============================================================================
+@@/^auth\..*\.com$/
+@@/^clients[0-9]*\.google\.(?:com|[a-z.]{2,})$/
+@@/^identity\..*\.com$/
+@@/^oauth\..*\.com$/
+@@/^sso\..*\.com$/
+@@/^(?:cdn|api|login|accounts)\.(?:github|gitlab)\.(?:com|io)$/
+@@/^(?:[a-z0-9-]+\.)*(?:spotify|reddit(?:media)?|mega|soundcloud)\.(?:com|nl|io|tw|se|do)$/
+
+
+! =============================================================================
+! ➕ 13. OPTIONAL WHITELISTS (toggle as needed)
+! Keep commented until you observe breakage tied to these.
+! =============================================================================
+
+! Utilities / IP checkers
+@@/^ipv(?:4|6)\.icanhazip\.com$/
+@@||api.ipify.org^
+@@||checkip.amazonaws.com^
+@@||icanhazip.com^
+@@||ifconfig.me^
+@@||ipinfo.io^
+@@||wtfismyip.com^
+
+! Gaming platforms (active)
+@@||amd.com^
+@@||ea.com^
+@@||epicgames.com^
+@@||gog.com^
+@@||nvidia.com^
+@@||origin.com^
+@@||riotgames.com^
+@@||steamcdn-a.akamaihd.net^
+@@||steamcommunity.com^
+@@||steampowered.com^
+
+! Gaming platforms (commented; enable if needed)
+!@@||battle.net^
+!@@||blizzard.com^
+!@@||playstation.com^
+!@@||xbox.com^
+!@@||xboxlive.com^
+
+! Torrents / trackers (volatile; many mirrors change)
+@@||1337x.to^
+@@||explodie.org^
+@@||iptorrents.com^
+@@||ipv4.tracker.harry.lu^
+@@||limetorrents.cc^
+@@||nyaa.si^
+@@||rarbg.to^
+@@||thepiratebay.org^
+@@||torrentgalaxy.to^
+@@||tracker.bt4g.com^
+@@||tracker.coppersurfer.tk^
+@@||tracker.dler.org^
+@@||tracker.gbitt.info^
+@@||tracker.internetwarriors.net^
+@@||tracker.leechers-paradise.org^
+@@||tracker.nanoha.org^
+@@||tracker.openbittorrent.com^
+@@||tracker.opentrackr.org^
+@@||tracker.torrent.eu.org^
+@@||tracker2.itzmx.com^
+@@||yts.mx^
+
+! Adult (NSFW) — optional
+@@/^(?:[a-f-Z-9-]+\.)*(?:pornhub|xnxx|xvideos|xhamster|youporn)\.(?:com|nl|io|tw|se|do)$/
+
+
+! =============================================================================
+! ✅ 14. QUICK UNBREAK EXAMPLES
+! Use these as temporary toggles while you investigate root cause.
+! =============================================================================
+! @@||discovery.meethue.com^
+! @@||firebaseio.com^
+! @@||intercom.io^
+! @@||onesignal.com^
+! @@||zendesk.com^
+
+! =============================================================================
+! ℹ️ 15. MAINTAINER NOTES
+! =============================================================================
+! • Order doesn’t affect DNS matching, but keeping sections tidy helps diffing.
+! • Punycode: IDNs appear as xn--*. Add rules using the punycode form if needed.
+! • CNAME cloaking: AdGuard can detect some CNAMEs; still, block root trackers directly (as above).
+! • Alternative resolvers: do NOT allowlist public DoH/DoT endpoints unless you want clients bypassing AdGuard.
+! • If you see latency spikes, trim regex count (start with the broad tracking line).
+! • Review whitelists: Periodically review your @@ rules. An unneeded or compromised 
+!   whitelist (like the historic polyfill.io case) is a security risk.
+! =============================================================================
