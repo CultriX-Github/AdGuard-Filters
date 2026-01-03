@@ -1,60 +1,59 @@
 ! =============================================================================
-! Title: Combined Optimal AdGuard DNS Filter (Improved)
-! Description: DNS-only rules for AdGuard DNS. Safe defaults + practical allows.
-! Version: v1.2.0 (Improved)
-! Last Updated: 2025-11-11
+! Title: Ultimate AdGuard DNS Whitelist (v6.0.0) - Whitelists Only
+! Description: Whitelist rules (@@) from improved_blocklistv6.txt. DNS-only for AdGuard. Use with blacklist.
+! Version: v6.0.0
+! Last Updated: 2026-01-03
 !
-! CHANGELOG (v1.4.1):
-! • Added PKI staple for older Let's Encrypt chains.
-! • Added performance note for broad tracking regex.
-! • Fixed typo in Section 14 divider.
-!
-! HOW THIS LIST IS DESIGNED
-! • DNS context only (no cosmetic rules, no path/param matching).
-! • Specific domains first (fast, predictable) → regex patterns (carefully scoped).
-! • Allow rules:
-!  	  – Plain @@ rules keep $important (higher priority).
-!  	  – Regex @@ rules omit modifiers for stability.
-! • “AGGRESSIVE” blocks and “OPTIONAL” allows are off by default — enable consciously.
-!
-! DEBUGGING PLAYBOOK (quick)
-! 1) In AdGuard logs filter by “Blocked by custom filtering rules”.
-! 2) If breakage is from a regex, allowlist the exact domain with @@||domain.tld^
-! 3) Prefer adding per-site @@ over deleting a global block rule.
-! 4) If TLS/SSO fails sporadically, check OCSP/PKI allows below.
-!
-! TUNING PLAYBOOK (personalize your list)
-! 1) Find New Blocks: Check your "Allowed" query log for tracker-like domains 
-!    (e.g., telemetry.app-you-use.com) and add them to the blocklist.
-! 2) Find False Positives: Check your "Blocked" log for legitimate services 
-!    that are broken. Add them to "Section 14: QUICK UNBREAK EXAMPLES"
-!    (e.g., @@||service.that-broke.com^).
-!
-! REGEX NOTES (important)
-! • All regexes match the FULL hostname (we anchor with ^ and $).
-! • End-of-domain class uses [a-z.]{2,} to tolerate multi-label TLDs (e.g., co.uk).
-! • Keep regex count modest: they evaluate on each query. Favor plain domains where possible.
+! Includes essential @@ from sections 11(local),13-16. $important overrides blocks.
 ! =============================================================================
 
 ! =============================================================================
-! ✅ 11. ESSENTIAL WHITELIST — CORE SERVICES & INFRA
-! $important → wins over blocks. Keep this lean & boring.
+! 🏠 11. HOME LAB & LOCAL NETWORK (v3/v5) - Local Whitelists
+! Allow local. Blocks in separate file.
 ! =============================================================================
+
+@@||10.0.0.0/8^$important
+@@||127.0.0.1^$important
+@@||192.168.0.0/16^$important
+@@||localhost^$important
+
+! =============================================================================
+! ✅ 13. ESSENTIAL WHITELIST — CORE SERVICES & INFRA
+! $important overrides. Lean + comprehensive merge.
+! =============================================================================
+! Connectivity/Time
+! SSO/CAPTCHA
+! CDNs
+! PKI/OCSP (modern)
+
 @@||accounts.google.com^$important
 @@||adaway.org^$important
 @@||ajax.googleapis.com^$important
+@@||akamai.net^$important
+@@||akamaized.net^$important
 @@||api.telegram.org^$important
+@@||apple-dns.net^$important
 @@||archlinux.org^$important
+@@||auth0.com^$important
+@@||bootstrapcdn.com^$important
 @@||brave.com^$important
+@@||captive.apple.com^$important
 @@||cdn.jsdelivr.net^$important
 @@||cdnjs.cloudflare.com^$important
 @@||cloudflare.com^$important
+@@||connectivitycheck.android.com^$important
+@@||connectivitycheck.gstatic.com^$important
 @@||content.googleapis.com^$important
 @@||dbl.oisd.nl^$important
 @@||debian.org^$important
+@@||detectportal.firefox.com^$important
+@@||discord.com^$important
+@@||docs.google.com^$important
+@@||drive.google.com^$important
 @@||duck.com^$important
 @@||duckduckgo.com^$important
 @@||easylist.to^$important
+@@||fastly.net^$important
 @@||fedoraproject.org^$important
 @@||filterlists.com^$important
 @@||fonts.googleapis.com^$important
@@ -65,58 +64,21 @@
 @@||githubusercontent.com^$important
 @@||gitlab.com^$important
 @@||googleapis.com^$important
+@@||gstatic.com^$important
+@@||hcaptcha.com^$important
+@@||icloud.com^$important
+@@||identity.netlify.com^$important
 @@||kernel.org^$important
+@@||lencr.org^$important
 @@||linux.org^$important
+@@||live.com^$important
 @@||login.microsoftonline.com^$important
+@@||mail.google.com^$important
+@@||microsoftonline.com^$important
 @@||mozilla.org^$important
-@@||opensuse.org^$important
-@@||paypal.com^$important
-@@||paypalobjects.com^$important
-@@||pgl.yoyo.org^$important
-@@||proton.me^$important
-@@||protonmail.com^$important
-@@||signal.org^$important
-@@||stackoverflow.com^$important
-@@||startpage.com^$important
-@@||stripe.com^$important
-@@||torproject.org^$important
-@@||ubuntu.com^$important
-@@||unpkg.com^$important
-@@||wikimedia.org^$important
-||wikipedia.org^$important
-@@||youtube.com^$important
-@@||youtu.be^$important
-@@||ytimg.com^$important
-
-! Connectivity & time (prevent false “offline” states)
-@@||captive.apple.com^$important
-@@||connectivitycheck.android.com^$important
-@@||connectivitycheck.gstatic.com^$important
-@@||detectportal.firefox.com^$important
 @@||msftconnecttest.com^$important
 @@||msftncsi.com^$important
 @@||ntp.org^$important
-@@||pool.ntp.org^$important
-@@||time.apple.com^$important
-@@||time.cloudflare.com^$important
-@@||time.google.com^$important
-@@||time.windows.com^$important
-
-! Identity / SSO / CAPTCHA
-@@||auth0.com^$important
-@@||hcaptcha.com^$important
-@@||identity.netlify.com^$important
-@@||okta.com^$important
-@@||recaptcha.net^$important
-
-! CDNs (typical static asset delivery)
-@@||akamai.net^$important
-@@||akamaized.net^$important
-! @@||content.googleapis.com^$important ! Duplicate, already listed above
-@@||fastly.net^$important
-@@||gstatic.com^$important
-
-! OCSP / PKI (TLS stability during browsing & auth)
 @@||ocsp.apple.com^$important
 @@||ocsp.digicert.com^$important
 @@||ocsp.globalsign.com^$important
@@ -126,110 +88,120 @@
 @@||ocsp.pki.goog^$important
 @@||ocsp.sectigo.com^$important
 @@||ocsp.usertrust.com^$important
+@@||office.com^$important
+@@||office365.com^$important
+@@||okta.com^$important
+@@||opensuse.org^$important
+@@||outlook.com^$important
+@@||paypal.com^$important
+@@||paypalobjects.com^$important
+@@||pgl.yoyo.org^$important
+@@||pool.ntp.org^$important
+@@||proton.me^$important
+@@||protonmail.com^$important
+@@||push.apple.com^$important
 @@||r3.o.lencr.org^$important
-
+@@||recaptcha.net^$important
+@@||signal.org^$important
+@@||slack.com^$important
+@@||stackoverflow.com^$important
+@@||stackpath.bootstrapcdn.com^$important
+@@||startpage.com^$important
+@@||stripe.com^$important
+@@||teams.microsoft.com^$important
+@@||time.apple.com^$important
+@@||time.cloudflare.com^$important
+@@||time.google.com^$important
+@@||time.windows.com^$important
+@@||torproject.org^$important
+@@||ubuntu.com^$important
+@@||unpkg.com^$important
+@@||wikimedia.org^$important
+@@||wikipedia.org^$important
+@@||youtu.be^$important
+@@||youtube.com^$important
+@@||ytimg.com^$important
+@@||zoom.us^$important
 
 ! =============================================================================
-! ✅ 12. ESSENTIAL WHITELIST — DNS-SAFE REGEX
-! No $domain or $important on regex allows (keeps parser happy).
+! ✅ 14. ESSENTIAL WHITELIST — DNS-SAFE REGEX
 ! =============================================================================
-@@/^auth\..*\.com$/
-@@/^clients[0-9]*\.google\.(?:com|[a-z.]{2,})$/
-@@/^identity\..*\.com$/
-@@/^oauth\..*\.com$/
-@@/^sso\..*\.com$/
-@@/^(?:cdn|api|login|accounts)\.(?:github|gitlab)\.(?:com|io)$/
+! Broad SSO (optional - too wide)
+!@@/^auth\..*\.com$/
+!@@/^identity\..*\.com$/
+!@@/^oauth\..*\.com$/
+!@@/^sso\..*\.com$/
+
 @@/^(?:[a-z0-9-]+\.)*(?:spotify|reddit(?:media)?|mega|soundcloud)\.(?:com|nl|io|tw|se|do)$/
-
+@@/^(?:cdn|api|login|accounts)\.(?:github|gitlab)\.(?:com|io)$/
+@@/^clients[0-9]*\.google\.(?:com|[a-z.]{2,})$/
 
 ! =============================================================================
-! ➕ 13. OPTIONAL WHITELISTS (toggle as needed)
-! Keep commented until you observe breakage tied to these.
+! ➕ 15. OPTIONAL WHITELISTS (Toggle/Comment Out)
+! Gaming/IP/Torrents/NSFW.
 ! =============================================================================
-
-! Utilities / IP checkers
-@@/^ipv(?:4|6)\.icanhazip\.com$/
-@@||api.ipify.org^
-@@||checkip.amazonaws.com^
-@@||icanhazip.com^
-@@||ifconfig.me^
-@@||ipinfo.io^
-@@||wtfismyip.com^
-
-! Gaming platforms (active)
-@@||amd.com^
-@@||ea.com^
-@@||epicgames.com^
-@@||gog.com^
-@@||nvidia.com^
-@@||origin.com^
-@@||riotgames.com^
-@@||steamcdn-a.akamaihd.net^
-@@||steamcommunity.com^
-@@||steampowered.com^
-
-! Gaming platforms (commented; enable if needed)
+! IP/Utilities
+!@@||api.ipify.org^
+!@@||icanhazip.com^
+!@@||ifconfig.me^
+!@@||ipinfo.io^
+! Gaming
+!@@||amd.com^
+!@@||ea.com^
+!@@||epicgames.com^
+!@@||gog.com^
+!@@||nvidia.com^
+!@@||origin.com^
+!@@||riotgames.com^
+!@@||steamcommunity.com^
+!@@||steampowered.com^
 !@@||battle.net^
 !@@||blizzard.com^
 !@@||playstation.com^
 !@@||xbox.com^
 !@@||xboxlive.com^
-
-! Torrents / trackers (volatile; many mirrors change)
-@@||1337x.to^
-@@||explodie.org^
-@@||iptorrents.com^
-@@||ipv4.tracker.harry.lu^
-@@||limetorrents.cc^
-@@||nyaa.si^
-@@||rarbg.to^
-@@||thepiratebay.org^
-@@||torrentgalaxy.to^
-@@||tracker.bt4g.com^
-@@||tracker.coppersurfer.tk^
-@@||tracker.dler.org^
-@@||tracker.gbitt.info^
-@@||tracker.internetwarriors.net^
-@@||tracker.leechers-paradise.org^
-@@||tracker.nanoha.org^
-@@||tracker.openbittorrent.com^
-@@||tracker.opentrackr.org^
-@@||tracker.torrent.eu.org^
-@@||tracker2.itzmx.com^
-@@||yts.mx^
-
-! Adult (NSFW) — optional
-! Note: Expanded to include popular sites, essential CDNs, and payment gateways.
-! --- 13.1 Major Tube Sites & CDNs ---
-@@/^(?:[a-z0-9-]+\.)*(?:pornhub|phncdn|xnxx|xvideos|xv-cdn|xhamster|xhcdn|youporn|redtube|spankbang)\.[a-z.]{2,}$/
-
-! --- 13.2 Live Cam Sites & CDNs ---
-@@/^(?:[a-z0-9-]+\.)*(?:chaturbate|bongacams|bngpt|livejasmin|myfreecams|stripchat)\.[a-z.]{2,}$/
-
-! --- 13.3 Studio & Niche/Image Hosts ---
-@@/^(?:[a-z0-9-]+\.)*(?:brazzers|naughtyamerica|realitykings|redgifs|erome|nhentai)\.[a-z.]{2,}$/
-
-! --- 13.4 Payment Processors ---
-@@/^(?:[a-z0-9-]+\.)*(?:epoch|segpay)\.[a-z.]{2,}$/
+! Torrents (cleaned)
+!@@||1337x.to^
+!@@||explodie.org^
+!@@||iptorrents.com^
+!@@||ipv4.tracker.harry.lu^
+!@@||limetorrents.cc^
+!@@||nyaa.si^
+!@@||thepiratebay.org^
+!@@||torrentgalaxy.to^
+!@@||tracker.bt4g.com^
+!@@||tracker.dler.org^
+!@@||tracker.gbitt.info^
+!@@||tracker.internetwarriors.net^
+!@@||tracker.nanoha.org^
+!@@||tracker.openbittorrent.com^
+!@@||tracker.opentrackr.org^
+!@@||tracker.torrent.eu.org^
+!@@||tracker2.itzmx.com^
+!@@||yts.mx^
+! NSFW
+!@@/^(?:[a-z0-9-]+\.)*(?:pornhub|phncdn|xnxx|xvideos|xv-cdn|xhamster|xhcdn|youporn|redtube|spankbang)\.[a-z.]{2,}$/
+!@@/^(?:[a-z0-9-]+\.)*(?:chaturbate|bongacams|bngpt|livejasmin|myfreecams|stripchat)\.[a-z.]{2,}$/
+!@@/^(?:[a-z0-9-]+\.)*(?:brazzers|naughtyamerica|realitykings|redgifs|erome|nhentai)\.[a-z.]{2,}$/
+!@@/^(?:[a-z0-9-]+\.)*(?:epoch|segpay)\.[a-z.]{2,}$/
 
 ! =============================================================================
-! ✅ 14. QUICK UNBREAK EXAMPLES
-! Use these as temporary toggles while you investigate root cause.
+! ✅ 16. QUICK UNBREAK EXAMPLES + MAINTENANCE
+! Site-specific fixes. Weekly logs, monthly patterns, quarterly audits.
 ! =============================================================================
-! @@||discovery.meethue.com^
-! @@||firebaseio.com^
-! @@||intercom.io^
-! @@||onesignal.com^
-! @@||zendesk.com^
+!@@||discovery.meethue.com^
+!@@||firebaseio.com^
+!@@||intercom.io^
+!@@||onesignal.com^
+!@@||shopifycloud.com^
+!@@||zendesk.com^
 
+! MAINTENANCE SCHEDULE (v2):
+! Weekly: Logs for FPs/new trackers.
+! Monthly: Blocked queries → patterns.
+! Quarterly: Torrents/PKI.
+! Annually: Full audit.
+! Test changes: Copy file, monitor 24-48h.
 ! =============================================================================
-! ℹ️ 15. MAINTAINER NOTES
-! =============================================================================
-! • Order doesn’t affect DNS matching, but keeping sections tidy helps diffing.
-! • Punycode: IDNs appear as xn--*. Add rules using the punycode form if needed.
-! • CNAME cloaking: AdGuard can detect some CNAMEs; still, block root trackers directly (as above).
-! • Alternative resolvers: do NOT allowlist public DoH/DoT endpoints unless you want clients bypassing AdGuard.
-! • If you see latency spikes, trim regex count (start with the broad tracking line).
-! • Review whitelists: Periodically review your @@ rules. An unneeded or compromised 
-!   whitelist (like the historic polyfill.io case) is a security risk.
+! END OF WHITELIST
 ! =============================================================================
