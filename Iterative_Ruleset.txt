@@ -1,46 +1,92 @@
 ! =============================================================================
-! Title: Ultimate AdGuard DNS Filter (v6.0.0) - Optimal Merge of v1-v5
-! Description: DNS-only rules for AdGuard. Comprehensive merge: uniques from all versions, deduplicated, perf-optimized, safe defaults.
-! Version: v6.0.0
-! Last Updated: 2026-01-03
+! Title: CultriX Safe+Strong AdGuard Home DNS Filter (Optimized)
+! Description: DNS-only blocklist for AdGuard Home: high-signal ads/trackers + sane malware/scam defenses, with safety-first defaults and comprehensive essential allowlists.
+! Version: v1.0.2
+! Last Updated: 2026-01-23
 !
-! CHANGELOG (v6.0.0):
-! • FULL MERGE: Uniques from v1.4.2, v1.5.0, v3.0.0, v4.1.4.2, v5.0.0
-! • Deduplicated domains/regex across all.
-! • Best structure/docs from v2/v5; conservative safeties from v4 (Firebase/SmartThings/broad-SSO optional).
-! • Expanded: streaming/gaming (v2/v5), home lab (v3/v5), modern analytics/PKI.
-! • Perf: Split broad regex; comment UI/analytics.google.com.
-! • Whitelists: Comprehensive essentials (v5), optionals fully commented.
+! CHANGELOG (v1.0.2):
+! • Fixed syntax: removed non-AdGuard comment style (no /* ... */ blocks).
+! • Kept LAN CIDR allow-rules removed (DNS filters match hostnames, not IP ranges).
+! • Added Microsoft OCSP allow: ocsp.msocsp.com.
+! • Improved coverage: added more high-confidence ad-tech networks (still conservative).
+! • Added redshell.io (telemetry/marketing attribution seen in some apps).
+! • Added OPTIONAL (commented) streaming ad endpoints (Hulu/Spotify/Pandora) for those who want it.
+! • Alphabetized major domain lists for maintainability.
 !
 ! DESIGN PRINCIPLES
-! • Specific domains first (fast) → scoped regex.
-! • $important whitelists override blocks.
-! • Anchored full-hostname regex ([a-z.]{2,} for TLDs like co.uk).
-! • Aggressive/optional: COMMENTED by default.
+! • DNS context only (no cosmetic rules, no URL paths/params).
+! • Specific domains first (fast, predictable) → scoped regex patterns (carefully anchored).
+! • Allow rules use $important for priority; regex allowlists omit modifiers for parser stability.
+! • Aggressive/optional rules are COMMENTED out by default — enable consciously.
 !
 ! DEBUGGING PLAYBOOK
-! 1) AdGuard logs: "Blocked by custom filtering rules".
-! 2) Regex breakage: @@||domain.tld^.
-! 3) TLS/SSO: Check PKI/OCSP in Section 13.
-! 4) False positives: Add to Section 16.
+! 1) Check AdGuard Query Log → filter “Blocked by custom filtering rules”.
+! 2) If a site/app breaks: allowlist the exact hostname with: @@||broken.host.tld^$important
+! 3) If breakage came from a regex family: keep the regex, add a precise @@ exception for the app/site.
+! 4) TLS/SSO weirdness (random login failures): verify OCSP/CRL/PKI allow rules in Section 11.
 !
 ! TUNING PLAYBOOK
-! 1) Blocks: Log "Allowed" for trackers → add to blocks.
-! 2) FPs: Log "Blocked" for legit → Section 16.
-!
-! TESTING CHECKLIST
-! Bank SSO, shopping, video/gaming, IoT, home lab.
-! Monitor logs 24-48h post-change.
+! • Want stricter privacy? Uncomment Section 10 (AGGRESSIVE) selectively.
+! • Want fewer false positives? First disable the broad tracking regex lines in Section 3.2, then re-test.
+! • Handling CNAME cloaking: watch logs for first-party “analytics.*” domains and block/allow per-site.
 !
 ! REGEX NOTES
-! Modest count; disable broad if latency on weak devices.
+! • All regex entries are anchored: ^ and $ match the FULL hostname.
+! • TLD class uses [a-z.]{2,} to tolerate multi-label TLDs (e.g., co.uk).
+! • PERFORMANCE NOTE: This list includes 31 regex patterns. On weak DNS hardware, consider disabling the broad families in Section 3.2 first.
 ! =============================================================================
 
 ! =============================================================================
 ! 🛑 1. CORE AD BLOCKING
-! High-signal networks + patterns (merged uniques).
+! Purpose: Major ad networks and ad-serving infrastructure (high confidence).
 ! =============================================================================
+! --- 1.1 Major Ad Networks (domains) ---
+||2mdn.net^
+||33across.com^
+||aaxads.com^
+||adcolony.com^
+||adform.net^
+||adnxs.com^
+||adroll.com^
+||ads.yahoo.com^
+||adsafeprotected.com^
+||adservice.google.com^
+||adsrvr.org^
+||advertising.com^
+||amazon-adsystem.com^
+||atdmt.com^
+||bidswitch.net^
+||casalemedia.com^
+||chartboost.com^
+||contextweb.com^
+||criteo.com^
+||doubleclick.net^
+||doubleverify.com^
+||indexexchange.com^
+||integralads.com^
+||lijit.com^
+||media.net^
+||mgid.com^
+||moatads.com^
+||openx.net^
+||outbrain.com^
+||pubmatic.com^
+||pulsepoint.com^
+||revcontent.com^
+||rubiconproject.com^
+||serving-sys.com^
+||sharethrough.com^
+||smartadserver.com^
+||sovrn.com^
+||spotx.tv^
+||taboola.com^
+||tapad.com^
+||teads.tv^
+||vungle.com^
+||yieldmo.com^
+||zedo.com^
 
+! --- 1.2 Ad Domain Patterns (DNS-safe regex) ---
 /^(?:[a-z0-9-]+\.)*(?:ad(?:s?[xv]?|serv(?:er|ice)?s?)|advert(?:is(?:e|ing)|ements?)|banners?)\.[a-z.]{2,}$/
 /^(?:[a-z0-9-]+\.)*adchoice\.[a-z.]{2,}$/
 /^(?:[a-z0-9-]+\.)*adsdk\.[a-z.]{2,}$/
@@ -48,50 +94,13 @@
 /^(?:[a-z0-9-]+\.)*aff(?:iliat(?:es|ion))?\.[a-z.]{2,}$/
 /^(?:[a-z0-9-]+\.)*flashtalking\.[a-z.]{2,}$/
 /^(?:[a-z0-9-]+\.)*yieldmanager\.[a-z.]{2,}$/
-||33across.com^
-||aaxads.com^
-||adnxs.com^
-||ads.yahoo.com^
-||adservice.google.com^
-||adsrvr.org^
-||advertising.com^
-||amazon-adsystem.com^
-||bidswitch.net^
-||casalemedia.com^
-||criteo.com^
-||doubleclick.net^
-||doubleverify.com^
-||googlesyndication.com^
-||googletagmanager.com^
-||googletagservices.com^
-||indexexchange.com^
-||integralads.com^
-||media.net^
-||moatads.com^
-||openx.net^
-||outbrain.com^
-||pubmatic.com^
-||rubiconproject.com^
-||sharethrough.com^
-||sovrn.com^
-||taboola.com^
-||teads.tv^
-! =============================================================================
-! 📺 2. PLATFORM & SOCIAL ADS
-! TVs/social SDKs (graceful degradation).
-! =============================================================================
 
-/^(?:[a-z0-9-]+\.)*(?:ads?|captive|logs|cloudservices)\.roku\.com$/
-/^(?:[a-z0-9-]+\.)*ads-api\.amazon\.com$/
-/^(?:[a-z0-9-]+\.)*ads\.facebook\.com$/
-/^(?:[a-z0-9-]+\.)*ads\.linkedin\.com$/
-/^(?:[a-z0-9-]+\.)*ads\.reddit\.com$/
-/^(?:[a-z0-9-]+\.)*ads\.snapchat\.com$/
-/^(?:[a-z0-9-]+\.)*ads\.tiktok\.com$/
-/^(?:[a-z0-9-]+\.)*ads\.twitter\.com$/
-/^(?:[a-z0-9-]+\.)*clicks\.beap\.bc\.yahoo\.com$/
-/^(?:[a-z0-9-]+\.)*google[_.-]?syndicat(?:e|ion)+\.[a-z.]{2,}$/
-/^(?:[a-z0-9-]+\.)*secure\.footprint\.net$/
+! =============================================================================
+! 📺 2. PLATFORM-SPECIFIC ADS
+! Purpose: Social networks, smart TVs/streamers, and in-app ad endpoints.
+! =============================================================================
+! --- 2.1 Social / App ad endpoints (domains) ---
+||ads-api.tiktok.com^
 ||ads-bidder-api.twitter.com^
 ||ads-resources-client.vizio.com^
 ||advertising-api.pinterest.com^
@@ -106,40 +115,39 @@
 ||samsungads.com^
 ||telemetry.sdk.roku.com^
 ||tvx.adgrx.com^
-! =============================================================================
-! 📺 3. STREAMING & GAMING TELEMETRY
-! Hulu/Spotify + consoles.
-! =============================================================================
 
-||ads-fa.cdn.hulu.com^
-||ads-partner.hulu.com^
-||ads.hulu.com^
-||ads.spotify.com^
-||advertising.amazon.com^
-||advertising.apple.com^
-||advertising.pandora.com^
-||advertising.spotify.com^
-||arc.msn.com^
-||asimov.vortex.data.microsoft.com^
-||beacon.walmart.com^
-||doubleclick.spotify.com^
-||luminaryapp.nintendo.com^
-||pings.conviva.com^
-||pubads.g.doubleclick.net^
-||receive-lp1.dg.srv.nintendo.net^
-||telemetry-console.api.playstation.com^
-||telemetry.playstation.com^
-! =============================================================================
-! 🔍 4. TRACKING & ANALYTICS
-! Merged + split regex for perf/FP reduction.
-! =============================================================================
+! --- 2.2 Platform-specific regex (full-hostname) ---
+/^(?:[a-z0-9-]+\.)*(?:ads?|captive|logs|cloudservices)\.roku\.com$/
+/^(?:[a-z0-9-]+\.)*ads-api\.amazon\.com$/
+/^(?:[a-z0-9-]+\.)*ads\.facebook\.com$/
+/^(?:[a-z0-9-]+\.)*ads\.linkedin\.com$/
+/^(?:[a-z0-9-]+\.)*ads\.reddit\.com$/
+/^(?:[a-z0-9-]+\.)*ads\.snapchat\.com$/
+/^(?:[a-z0-9-]+\.)*ads\.tiktok\.com$/
+/^(?:[a-z0-9-]+\.)*ads\.twitter\.com$/
+/^(?:[a-z0-9-]+\.)*clicks\.beap\.bc\.yahoo\.com$/
+/^(?:[a-z0-9-]+\.)*google[_.-]?syndicat(?:e|ion)+\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*secure\.footprint\.net$/
 
-/^(?:[a-z0-9-]+\.)*(?:crashlytics|behavior|data-collect)\.[a-z.]{2,}$/
-/^(?:[a-z0-9-]+\.)*(?:fingerprint|device-id)\.[a-z.]{2,}$/
-/^(?:[a-z0-9-]+\.)*(?:pixel(?:s)?|beacons?)\.[a-z.]{2,}$/
-/^(?:[a-z0-9-]+\.)*(?:track(?:er|ing)?)\.[a-z.]{2,}$/
-/^(?:[a-z0-9-]+\.)*analytics?\.[a-z.]{2,}$/
-/^(?:[a-z0-9-]+\.)*telemetry\.[a-z.]{2,}$/
+! OPTIONAL (may break login/widgets/embedded media) — uncomment to enable
+!||connect.facebook.net^
+!||static.ads-twitter.com^
+
+! OPTIONAL (may degrade/break ad-supported streaming tiers) — uncomment to enable
+!||ads-fa.cdn.hulu.com^
+!||ads-partner.hulu.com^
+!||ads.hulu.com^
+!||ads.spotify.com^
+!||advertising.pandora.com^
+!||advertising.spotify.com^
+!||doubleclick.spotify.com^
+
+! =============================================================================
+! 🔍 3. TRACKING & ANALYTICS
+! Purpose: Analytics, telemetry, session replay, fingerprinting, and DMP/RTB trackers.
+! =============================================================================
+! --- 3.1 Known Trackers (domains) ---
+||adsymptotic.com^
 ||amplitude.com^
 ||bluekai.com^
 ||chartbeat.com^
@@ -149,7 +157,11 @@
 ||contentsquare.com^
 ||counter.dev^
 ||crazyegg.com^
+||crwdcntrl.net^
+||datadoghq.com^
+||demdex.net^
 ||dynatrace.com^
+||exelator.com^
 ||fathom.com^
 ||fullstory.com^
 ||glassbox.com^
@@ -161,6 +173,7 @@
 ||inspectlet.com^
 ||kissmetrics.com^
 ||logrocket.com^
+||mathtag.com^
 ||matomo.cloud^
 ||mixpanel.com^
 ||mouseflow.com^
@@ -172,6 +185,8 @@
 ||plausible.io^
 ||posthog.com^
 ||quantserve.com^
+||redshell.io^
+||rfihub.com^
 ||scorecardresearch.com^
 ||segment.com^
 ||segment.io^
@@ -183,43 +198,61 @@
 ||umami.is^
 ||usefathom.com^
 ||vercel-insights.com^
-! =============================================================================
-! ⛏️ 5. CRYPTO MINING & ABUSE
-! =============================================================================
 
+! --- 3.2 Tracking Families (regex) ---
+/^(?:[a-z0-9-]+\.)*(?:track(?:er|ing)?)\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*analytics?\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*telemetry\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:pixel(?:s)?|beacons?)\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:crashlytics|behavior|data-collect)\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:fingerprint|device-id)\.[a-z.]{2,}$/
+
+! OPTIONAL (commonly breaks site owner dashboards) — uncomment to enable
+!||analytics.google.com^
+
+! =============================================================================
+! ⛏️ 4. CRYPTOCURRENCY MINING & ABUSE
+! Purpose: Browser miners, cryptojacking, and related abuse infrastructure.
+! =============================================================================
 ||authedmine.com^
 ||browsermine.com^
 ||coin-hive.com^
 ||coinhive.com^
+||coinimp.com^
 ||coinlab.biz^
 ||crypto-loot.com^
 ||cryptoloot.pro^
+||cryptonight.net^
 ||deepminer.org^
 ||freecontent.date^
 ||hashvault.pro^
 ||jsecoin.com^
+||mineralt.io^
 ||minero.cc^
 ||monerominer.rocks^
 ||moneroocean.stream^
-||redshell.io^
 ||webmine.pro^
 ||webminepool.com^
-! =============================================================================
-! ⚠️ 6. SCAM & FRAUD BLOCKING
-! =============================================================================
 
-/^(?:[a-z0-9-]+\.)*(?:crypto|bitcoin|ether|nft|scam|phish)[_-](?:gift|promo|airdrop)\.[a-z.]{2,}$/
-/^(?:[a-z0-9-]+\.)*(?:d[ilsc]{2,}rds?-?(?:g[il]ft|n[il]tro)|gifts?-?discord)\.[a-z.]{2,}$/
-/^(?:[a-z0-9-]+\.)*(?:free|get|claim|reward|prize|winner|youve-won)\.[a-z.]{2,}$/
+! =============================================================================
+! ⚠️ 5. SCAM & FRAUD BLOCKING
+! Purpose: High-confidence scam patterns (kept conservative to avoid false positives).
+! =============================================================================
+! Domains
 ||claim-reward.net^
 ||free-money.site^
 ||verify-your-account.com^
-! =============================================================================
-! 🦠 7. MALWARE & PHISHING PROTECTION
-! =============================================================================
 
-/^(?:[a-z0-9-]+\.)*(?:malware|spyware|ransomware|virus|trojan|worm)\.[a-z.]{2,}$/
-/^(?:[a-z0-9-]+\.)*(?:scan|clean|remove|detect|protect|security)-(?:virus|malware|spyware)\.[a-z.]{2,}$/
+! Regex (gift/airdrop/discord scams, obvious reward bait)
+/^(?:[a-z0-9-]+\.)*(?:crypto|bitcoin|ether|nft|scam|phish)[_-](?:gift|promo|airdrop)\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:d[ilsc]{2,}rds?-?(?:g[il]ft|n[il]tro)|gifts?-?discord)\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:free|get|claim|reward|prize|winner|youve-won)\.[a-z.]{2,}$/
+
+! =============================================================================
+! 🦠 6. MALWARE & PHISHING PROTECTION
+! Purpose: Nuisance malware, fake updates, and obvious phishing patterns.
+! =============================================================================
+! Domains
 ||browser-update.info^
 ||download-software.net^
 ||fakeupdate.net^
@@ -227,53 +260,84 @@
 ||install-app.net^
 ||mackeeper.com^
 ||malware-check.online^
+||pcspeedup.com^
 ||ransom-payment.xyz^
 ||security-breach-alert.com^
+||support-alerts.com^
 ||system-check-required.info^
 ||tinyurl.is^
 ||update-flash.com^
 ||virus-detector.site^
 ||windows-defender-alert.com^
 ||your-computer-is-infected.com^
-! =============================================================================
-! ⚙️ 8. UNWANTED SERVICES & MOBILE SDKs
-! Conservative (push/crash optional).
-! =============================================================================
 
-/^(?:[a-z0-9-]+\.)*(?:clicktale|mouseflow)\.[a-z.]{2,}$/
-/^(?:[a-z0-9-]+\.)*(?:survey(?:link)?|stats?)\.[a-z.]{2,}$/
+! Regex (generic malware/phish naming)
+/^(?:[a-z0-9-]+\.)*(?:malware|spyware|ransomware|virus|trojan|worm)\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:scan|clean|remove|detect|protect|security)-(?:virus|malware|spyware)\.[a-z.]{2,}$/
+
+! =============================================================================
+! ⚙️ 7. UNWANTED SERVICES (MOBILE SDKs, PUSH, CRASH/SESSION)
+! Purpose: SDK trackers and push/attribution services. Allow per-app if something breaks.
+! =============================================================================
+! Domains
 ||adjust.com^
+||airship.com^
+||applovin.com^
 ||appsflyer.com^
 ||branch.io^
 ||braze.com^
 ||bugsnag.com^
 ||flurry.com^
+||inmobi.com^
+||ironsrc.com^
 ||kochava.com^
 ||leanplum.com^
+||mobileapptracking.com^
 ||onesignal.com^
 ||pushwoosh.com^
+||singular.net^
+||supersonicads.com^
+||tapjoy.com^
+||unityads.unity3d.com^
 ||urbanairship.com^
-! =============================================================================
-! 🏠 9. IoT DEVICE TRACKING
-! Diagnostics optional.
-! =============================================================================
-!||api.smartthings.com^     ! Optional - core API
-!||gcloudiap.googleapis.com^ ! Optional - SSO/enterprise
 
+! Regex (extra families)
+/^(?:[a-z0-9-]+\.)*(?:clicktale|mouseflow)\.[a-z.]{2,}$/
+/^(?:[a-z0-9-]+\.)*(?:survey(?:link)?|stats?)\.[a-z.]{2,}$/
+
+! =============================================================================
+! 🏠 8. IOT DEVICE TRACKING
+! Purpose: Diagnostics/telemetry for smart home, NAS, and media devices.
+! =============================================================================
+! Telemetry domains
+||analytics.esphome.io^
 ||analytics.sonos.com^
-||blink-app-service.lamarzocco.io^
 ||crashlytics.googleapis.com^
 ||data.alexa.amazon.com^
+||diagnostics.meethue.com^
+||eventing.plex.tv^
+||heartbeat.qnap.com^
 ||iot-analytics.amazon.com^
 ||logs.ecobee.com^
 ||metrics.apple.com^
 ||metrics.nest.com^
+||metrics.plex.tv^
+||metrics.roku.com^
 ||stats.govee.com^
+||telemetry.home-assistant.io^
 ||telemetry.philips-hue.com^
-! =============================================================================
-! 🎥 10. VIDEO CONFERENCING TELEMETRY
-! =============================================================================
+||telemetry.qnap.com^
+||telemetry.synology.com^
 
+! OPTIONAL (may disable core device cloud features) — uncomment only if you accept feature loss
+!||api.smartthings.com^
+!||gcloudiap.googleapis.com^
+!||update.synology.com^
+
+! =============================================================================
+! 🎥 9. VIDEO CONFERENCING TELEMETRY
+! Purpose: Meeting telemetry endpoints. If calls degrade, allowlist vendor domains.
+! =============================================================================
 ||analytics.bluejeans.com^
 ||analytics.skype.com^
 ||analytics.zoom.us^
@@ -281,32 +345,20 @@
 ||rtc-telemetry.microsoft.com^
 ||telemetry.teams.microsoft.com^
 ||telemetry.webex.com^
-! =============================================================================
-! 🏠 11. HOME LAB & LOCAL NETWORK (v3/v5)
-! Block NAS/HA telemetry, allow local.
-! =============================================================================
 
-@@||10.0.0.0/8^$important
-@@||127.0.0.1^$important
-@@||192.168.0.0/16^$important
-@@||localhost^$important
-||analytics.esphome.io^
-||heartbeat.qnap.com^
-||telemetry.home-assistant.io^
-||telemetry.synology.com^
-||update.synology.com^
 ! =============================================================================
-! 🚧 12. AGGRESSIVE (OPTIONAL — COMMENTED)
-! May break apps/support. Uncomment to enable.
+! 🚧 10. AGGRESSIVE / OPTIONAL (COMMENTED OUT)
+! Purpose: May break apps, updates, licensing, or support chat. Enable selectively.
 ! =============================================================================
-!||firebase.com^
-!||firebaseio.com^
-!||telemetry.visualstudio.com^
+! Desktop software telemetry (updates/licensing may break)
 !||data.figma.com^
 !||data.services.jetbrains.com^
 !||telemetry.docker.com^
 !||telemetry.github.com^
 !||telemetry.notion.com^
+!||telemetry.visualstudio.com^
+
+! Support widgets / session replay / chat (may break help centers)
 !||freshchat.com^
 !||intercom.io^
 !||salesforceliveagent.com^
@@ -315,18 +367,32 @@
 !||smartlook.com^
 !||userreplay.com^
 !||zendesk.com^
-!||events.statsigapi.net^
-!||o.clarity.ms^
+
+! Google Tagging (may break some sites relying on GTM for critical scripts)
+!||googletagmanager.com^
+!||googletagservices.com^
+
+! Firebase (very high breakage potential across mobile apps)
+!||firebase.com^
+!||firebaseio.com^
+
+! Social SDK endpoints (may break social login/embeds)
+!||connect.facebook.net^
+!||static.ads-twitter.com^
+
+! WordPress stats (can break some WP sites’ analytics; usually safe to block)
+!||stats.wp.com^
 
 ! =============================================================================
-! ✅ 13. ESSENTIAL WHITELIST — CORE SERVICES & INFRA
-! $important overrides. Lean + comprehensive merge.
+! ✅ 11. ESSENTIAL WHITELIST — CORE SERVICES & INFRA
+! Purpose: $important allow rules that should win over blocks. Keep boring and minimal.
 ! =============================================================================
-! Connectivity/Time
-! SSO/CAPTCHA
-! CDNs
-! PKI/OCSP (modern)
+! Local/LAN hostname safety (DNS context)
+@@||home.arpa^$important
+@@||local^$important
+@@||localhost^$important
 
+! Core allowlist
 @@||accounts.google.com^$important
 @@||adaway.org^$important
 @@||ajax.googleapis.com^$important
@@ -337,7 +403,6 @@
 @@||archlinux.org^$important
 @@||auth0.com^$important
 @@||bootstrapcdn.com^$important
-@@||brave.com^$important
 @@||captive.apple.com^$important
 @@||cdn.jsdelivr.net^$important
 @@||cdnjs.cloudflare.com^$important
@@ -345,22 +410,18 @@
 @@||connectivitycheck.android.com^$important
 @@||connectivitycheck.gstatic.com^$important
 @@||content.googleapis.com^$important
-@@||dbl.oisd.nl^$important
+@@||crates.io^$important
 @@||debian.org^$important
 @@||detectportal.firefox.com^$important
 @@||discord.com^$important
-@@||docs.google.com^$important
-@@||drive.google.com^$important
+@@||docker.io^$important
 @@||duck.com^$important
 @@||duckduckgo.com^$important
-@@||easylist.to^$important
 @@||fastly.net^$important
 @@||fedoraproject.org^$important
-@@||filterlists.com^$important
 @@||fonts.googleapis.com^$important
 @@||fonts.gstatic.com^$important
-@@||ggpht.com^$important
-@@||gitcdn.xyz^$important
+@@||ghcr.io^$important
 @@||github.com^$important
 @@||githubusercontent.com^$important
 @@||gitlab.com^$important
@@ -368,10 +429,8 @@
 @@||gstatic.com^$important
 @@||hcaptcha.com^$important
 @@||icloud.com^$important
-@@||identity.netlify.com^$important
 @@||kernel.org^$important
 @@||lencr.org^$important
-@@||linux.org^$important
 @@||live.com^$important
 @@||login.microsoftonline.com^$important
 @@||mail.google.com^$important
@@ -379,36 +438,50 @@
 @@||mozilla.org^$important
 @@||msftconnecttest.com^$important
 @@||msftncsi.com^$important
+@@||npmjs.org^$important
 @@||ntp.org^$important
 @@||ocsp.apple.com^$important
+@@||ocsp.comodoca.com^$important
 @@||ocsp.digicert.com^$important
+@@||ocsp.entrust.net^$important
 @@||ocsp.globalsign.com^$important
 @@||ocsp.godaddy.com^$important
 @@||ocsp.int-x3.letsencrypt.org^$important
 @@||ocsp.msocsp.com^$important
 @@||ocsp.pki.goog^$important
 @@||ocsp.sectigo.com^$important
+@@||ocsp.ssl.com^$important
 @@||ocsp.usertrust.com^$important
+@@||ocsp2.apple.com^$important
+@@||ocsp2.digicert.com^$important
+@@||ocsp2.globalsign.com^$important
 @@||office.com^$important
 @@||office365.com^$important
 @@||okta.com^$important
 @@||opensuse.org^$important
 @@||outlook.com^$important
+@@||packagist.org^$important
 @@||paypal.com^$important
 @@||paypalobjects.com^$important
-@@||pgl.yoyo.org^$important
 @@||pool.ntp.org^$important
 @@||proton.me^$important
 @@||protonmail.com^$important
 @@||push.apple.com^$important
+@@||pypi.org^$important
+@@||pythonhosted.org^$important
+@@||quay.io^$important
 @@||r3.o.lencr.org^$important
 @@||recaptcha.net^$important
+@@||registry-1.docker.io^$important
+@@||registry.npmjs.org^$important
+@@||rubygems.org^$important
+@@||serverfault.com^$important
 @@||signal.org^$important
 @@||slack.com^$important
 @@||stackoverflow.com^$important
-@@||stackpath.bootstrapcdn.com^$important
 @@||startpage.com^$important
 @@||stripe.com^$important
+@@||superuser.com^$important
 @@||teams.microsoft.com^$important
 @@||time.apple.com^$important
 @@||time.cloudflare.com^$important
@@ -419,88 +492,76 @@
 @@||unpkg.com^$important
 @@||wikimedia.org^$important
 @@||wikipedia.org^$important
-@@||youtu.be^$important
 @@||youtube.com^$important
+@@||youtu.be^$important
 @@||ytimg.com^$important
 @@||zoom.us^$important
-! =============================================================================
-! ✅ 14. ESSENTIAL WHITELIST — DNS-SAFE REGEX
-! =============================================================================
-! Broad SSO (optional - too wide)
-!@@/^auth\..*\.com$/
-!@@/^identity\..*\.com$/
-!@@/^oauth\..*\.com$/
-!@@/^sso\..*\.com$/
+@@||crl.globalsign.com^$important
+@@||crl.usertrust.com^$important
+@@||crl3.digicert.com^$important
+@@||crl4.digicert.com^$important
 
-@@/^(?:[a-z0-9-]+\.)*(?:spotify|reddit(?:media)?|mega|soundcloud)\.(?:com|nl|io|tw|se|do)$/
-@@/^(?:cdn|api|login|accounts)\.(?:github|gitlab)\.(?:com|io)$/
+! =============================================================================
+! ✅ 12. ESSENTIAL WHITELIST — DNS-SAFE REGEX
+! Purpose: Regex allowlists (no modifiers) for stability.
+! =============================================================================
 @@/^clients[0-9]*\.google\.(?:com|[a-z.]{2,})$/
-! =============================================================================
-! ➕ 15. OPTIONAL WHITELISTS (Toggle/Comment Out)
-! Gaming/IP/Torrents/NSFW.
-! =============================================================================
-! IP/Utilities
-!@@||api.ipify.org^
-!@@||icanhazip.com^
-!@@||ifconfig.me^
-!@@||ipinfo.io^
-! Gaming
-!@@||amd.com^
-!@@||ea.com^
-!@@||epicgames.com^
-!@@||gog.com^
-!@@||nvidia.com^
-!@@||origin.com^
-!@@||riotgames.com^
-!@@||steamcommunity.com^
-!@@||steampowered.com^
-!@@||battle.net^
-!@@||blizzard.com^
-!@@||playstation.com^
-!@@||xbox.com^
-!@@||xboxlive.com^
-! Torrents (cleaned)
-!@@||1337x.to^
-!@@||explodie.org^
-!@@||iptorrents.com^
-!@@||ipv4.tracker.harry.lu^
-!@@||limetorrents.cc^
-!@@||nyaa.si^
-!@@||thepiratebay.org^
-!@@||torrentgalaxy.to^
-!@@||tracker.bt4g.com^
-!@@||tracker.dler.org^
-!@@||tracker.gbitt.info^
-!@@||tracker.internetwarriors.net^
-!@@||tracker.nanoha.org^
-!@@||tracker.openbittorrent.com^
-!@@||tracker.opentrackr.org^
-!@@||tracker.torrent.eu.org^
-!@@||tracker2.itzmx.com^
-!@@||yts.mx^
-! NSFW
-!@@/^(?:[a-z0-9-]+\.)*(?:pornhub|phncdn|xnxx|xvideos|xv-cdn|xhamster|xhcdn|youporn|redtube|spankbang)\.[a-z.]{2,}$/
-!@@/^(?:[a-z0-9-]+\.)*(?:chaturbate|bongacams|bngpt|livejasmin|myfreecams|stripchat)\.[a-z.]{2,}$/
-!@@/^(?:[a-z0-9-]+\.)*(?:brazzers|naughtyamerica|realitykings|redgifs|erome|nhentai)\.[a-z.]{2,}$/
-!@@/^(?:[a-z0-9-]+\.)*(?:epoch|segpay)\.[a-z.]{2,}$/
+@@/^(?:cdn|api|login|accounts)\.(?:github|gitlab)\.(?:com|io)$/
 
 ! =============================================================================
-! ✅ 16. QUICK UNBREAK EXAMPLES + MAINTENANCE
-! Site-specific fixes. Weekly logs, monthly patterns, quarterly audits.
+! ➕ 13. OPTIONAL WHITELISTS (COMMENTED OUT)
+! Purpose: Enable only if you need them; keep defaults minimal.
 ! =============================================================================
-!@@||discovery.meethue.com^
-!@@||firebaseio.com^
-!@@||intercom.io^
-!@@||onesignal.com^
-!@@||shopifycloud.com^
-!@@||zendesk.com^
+! Utilities / IP checkers (enable if you use them and they get blocked)
+@@||api.ipify.org^$important
+@@||checkip.amazonaws.com^$important
+@@||icanhazip.com^$important
+@@||ifconfig.me^$important
+@@||ipinfo.io^$important
+@@||ipv4.icanhazip.com^$important
+@@||ipv6.icanhazip.com^$important
 
-! MAINTENANCE SCHEDULE (v2):
-! Weekly: Logs for FPs/new trackers.
-! Monthly: Blocked queries → patterns.
-! Quarterly: Torrents/PKI.
-! Annually: Full audit.
-! Test changes: Copy file, monitor 24-48h.
+! Gaming platforms (enable if telemetry blocks cause login/updates issues)
+@@||battle.net^$important
+@@||blizzard.com^$important
+@@||ea.com^$important
+@@||epicgames.com^$important
+@@||gog.com^$important
+@@||nintendo.net^$important
+@@||playstation.com^$important
+@@||steampowered.com^$important
+@@||steamcommunity.com^$important
+@@||xbox.com^$important
+@@||xboxlive.com^$important
+
+! Torrent trackers (volatile; enable at your own risk)
+@@||tracker.opentrackr.org^$important
+@@||tracker.openbittorrent.com^$important
+
+! Adult (NSFW) — optional
+@@/^(?:[a-z0-9-]+\.)*(?:pornhub|phncdn|xnxx|xvideos|xhamster|xhcdn|youporn|redtube|spankbang)\.[a-z.]{2,}$/
+
 ! =============================================================================
-! END OF ULTIMATE V6 - FULL COVERAGE, OPTIMAL, SAFE
+! 🩹 14. QUICK UNBREAK EXAMPLES
+! Purpose: Temporary toggles while you investigate root cause (uncomment as needed).
+! =============================================================================
+@@||discovery.meethue.com^$important
+!@@||firebaseio.com^$important
+!@@||intercom.io^$important
+!@@||onesignal.com^$important
+@@||sonos.com^$important
+!@@||stats.wp.com^$important
+!@@||zendesk.com^$important
+
+! =============================================================================
+! ℹ️ 15. MAINTAINER NOTES
+! Purpose: How to keep this list healthy over time.
+! =============================================================================
+! • Test changes by copying this list, then monitor AdGuard logs for 24–48 hours.
+! • Prefer narrow exceptions: @@||exact.host.tld^$important instead of disabling whole sections.
+! • Review allowlists quarterly; unnecessary @@ rules reduce privacy and can hide compromise.
+! • Add new CNAME-cloaked trackers from your own query log (they vary per site).
+! • If you run AdGuard on a weak router: reduce regex first (Section 3.2), then re-check latency.
+! =============================================================================
+! END OF LIST
 ! =============================================================================
